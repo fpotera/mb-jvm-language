@@ -32,7 +32,7 @@ public class MethodBuilder extends AdviceAdapter {
 
 	public void addLocalVariable ( LocalVariable var ) {
 		int varPos;
-		debug(" addLocalVariable()"+this);
+		debug(" addLocalVariable():"+var.getName()+" "+this);
 		if ( var.isArray() ) {
 			varPos = newLocal( var.getType().getArrayJvmType( var.getArrayDimension() ) );
 			push( var.getArrayDimension() );
@@ -157,10 +157,12 @@ public class MethodBuilder extends AdviceAdapter {
 								
 				loadLocal(lv.getArrayPosition(), lv.getType().getJvmType());
 				if ( lv.getType() == JMBVariableType.INTEGER ) {
-					invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf(int)"));
+//					invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf(Long)"));
+					invokeVirtual(Type.getType(Long.class), Method.getMethod("String toString()"));
 				}
 				if ( lv.getType() == JMBVariableType.FLOAT ) {
-					invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf(float)"));
+//					invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf(Double)"));
+					invokeVirtual(Type.getType(Double.class), Method.getMethod("String toString()"));
 				}
 				if ( lv.getType() == JMBVariableType.FIXED_STRING ) {
 					invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf(char[])"));
@@ -188,6 +190,7 @@ public class MethodBuilder extends AdviceAdapter {
 	}
 	
 	public LocalVariable getVariable( String varName ) throws CompileException {
+		debug(" getVariable():"+varName+" "+this);
 		LocalVariable lv = localVars.get(varName);
 		if ( lv==null )
 			throw new CompileException("Local variable "+varName+" used, but not defined.");

@@ -8,16 +8,9 @@ package com.axway.jmb;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ACC_STATIC;
-import static org.objectweb.asm.Opcodes.ASM5;
 import static org.objectweb.asm.Opcodes.V1_7;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,11 +18,8 @@ import java.util.Map;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
-import org.objectweb.asm.util.CheckClassAdapter;
-import org.objectweb.asm.util.TraceClassVisitor;
 
 import com.axway.jmb.JMessageBuilderParser.AdhocModuleBodyDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.BuiltinFunctionCallContext;
@@ -42,6 +32,7 @@ import com.axway.jmb.JMessageBuilderParser.ModuleDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.ModuleIdentifierContext;
 import com.axway.jmb.JMessageBuilderParser.PrimaryContext;
 import com.axway.jmb.JMessageBuilderParser.PrintStatementContext;
+import com.axway.jmb.JMessageBuilderParser.ProcedureCallContext;
 import com.axway.jmb.JMessageBuilderParser.ProcedureDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.RecordFieldContext;
 import com.axway.jmb.JMessageBuilderParser.RecordTypeDeclarationContext;
@@ -60,6 +51,8 @@ import com.axway.jmb.builtin.Builtin;
 public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void> {
 	private ModuleBuilder currentModule;
 	private MethodBuilder currentMethod;
+	private ConstructorBuilder currentConstructor;
+	private MethodBuilder mainMethod;
 	private ClassWriter currentInnerClass;
 	private ClassWriter currentClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 	
@@ -83,11 +76,10 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		debug("visitCompilationUnit()");
 		super.visitCompilationUnit(ctx);
 		
-		if ( currentMethod != null ) {
-			currentMethod.returnValue();
-			currentMethod.visitMaxs(10, 5);
-//			currentMethod.endMethod();			
-			currentMethod.visitEnd();	
+		if ( mainMethod != null ) {
+			mainMethod.returnValue();
+			mainMethod.visitMaxs(10, 5);		
+			mainMethod.visitEnd();	
 		}
 		if ( currentModule != null ) {
 			currentModule.visitEnded();
@@ -123,7 +115,8 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 	
 			currentModule = new ExecutableModuleBuilder(0, executableModuleName, currentClassWriter);
 			
-			currentMethod = currentModule.getMainMethod();
+			mainMethod = currentModule.getMainMethod();
+			currentConstructor = currentModule.getConstructor();
 			
 			classCreated = true;
 		}
@@ -266,34 +259,67 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 	}	
 
 	///////////////////////////////////////////////////////////////////////////////
-	//////   STATEMENT DECLARATION
+	//////   STATEMENT (PROCEDURE) DECLARATION
 	
 	@Override
 	public Void visitProcedureDeclaration(ProcedureDeclarationContext ctx) {
 		debug(" visitProcedureDeclaration()");
-		MethodBuilder previewMethod = currentMethod;
-		if ( ctx.procedureFormalParameters().procedureFormalParameterList() != null ) {
-			// have formal parameters
 
+		if ( ctx.procedureFormalParameters() != null && ctx.procedureFormalParameters().procedureFormalParameterList() != null ) {
+			// have formal parameters
 //			debug(" visitProcedureDeclaration()"+ctx.procedureFormalParameters().procedureFormalParameterList());
 //			debug(" visitProcedureDeclaration()"+ctx.procedureFormalParameters().procedureFormalParameterList().procedureFormalParameter().size());		
 		}
 		else {
-			currentMethod = Methods.buildProcedureWithoutParameters(currentModule, ctx.Identifier().getText(), getMethodAccess(ctx.PUBLIC()));
+			currentMethod = Methods.buildProcedureWithoutParameters(currentModule, ctx.Identifier().getText(), 
+					getMethodAccess(ctx.PUBLIC()), currentModule.getLabels());
 		}
 		
 		super.visitProcedureDeclaration(ctx);
 		
 		currentMethod.returnValue();
-		currentMethod.endMethod();
 		currentMethod.visitMaxs(12, 2);	
+		currentMethod.visitEnd();
 
-		currentMethod = previewMethod;
+		currentMethod = null;
 		
 		return null;
 	}	
 	
+	///////////////////////////////////////////////////////////////////////////////
+	//////   STATEMENT (PROCEDURE) CALL	
+
+	@Override
+	public Void visitProcedureCall(ProcedureCallContext ctx) {		
+		super.visitProcedureCall(ctx);
+		debug("visitProcedureCall():"+currentModule.getClassFullyQualifiedName());
+		String procedureCall = ctx.expressionName().getText();
+		String procedureName = procedureCall;
+		String moduleName = "";
+		if ( procedureCall.contains(".") ) {
+			// call to external procedure
+			moduleName = procedureCall.split("\\.")[0];
+			procedureName = procedureCall.split("\\.")[1];
+		}
+		if ( currentMethod == null ) {
+			if ( moduleName.equals("") ) {
+				Type classType = Type.getObjectType( Utils.getInternalFQClassName(currentModule.getClassFullyQualifiedName()) );
+				Methods.callLocalProcedureFromMainMethod( mainMethod, classType,
+						new Method("getModule", classType, new Type[0]),
+						new Method(Utils.getJavaMethodName(procedureName), Type.VOID_TYPE, new Type[0]));
+			}
+			else {
+				Methods.callRemoteProcedureFromMainMethod( mainMethod, moduleName, procedureName );
+			}
+		}
+		else {
+			
+		}
 		
+		return null;
+	}	
+	
+	
 	///////////////////////////////////////////////////////////////////////////////
 	//////   BUILTIN FUNCTION CALL	
 
@@ -310,19 +336,34 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 
 	@Override
 	public Void visitIntegerLiteral(IntegerLiteralContext ctx) {
-		currentMethod.pushOnStack( new Long ( ctx.getText() ) );
+		if ( currentMethod != null ) {
+			currentMethod.pushOnStack( new Long ( ctx.getText() ) );
+		}
+		else {
+			currentConstructor.pushOnStack( new Long ( ctx.getText() ) );
+		}
 		return super.visitIntegerLiteral(ctx);
 	}	
 
 	@Override
 	public Void visitFloatingPointLiteral(FloatingPointLiteralContext ctx) {
-		currentMethod.pushOnStack( new Double( ctx.getText() ) );
+		if ( currentMethod != null ) {
+			currentMethod.pushOnStack( new Double( ctx.getText() ) );
+		}
+		else {
+			currentConstructor.pushOnStack( new Long ( ctx.getText() ) );
+		}
 		return super.visitFloatingPointLiteral(ctx);
 	}
 	
 	@Override
 	public Void visitStringLiteral(StringLiteralContext ctx) {
-		currentMethod.pushOnStack( ctx.getText().substring(1, ctx.getText().length()-1) );
+		if ( currentMethod != null ) {
+			currentMethod.pushOnStack( ctx.getText().substring(1, ctx.getText().length()-1) );
+		}
+		else {
+			currentConstructor.pushOnStack( new Long ( ctx.getText() ) );
+		}
 		return super.visitStringLiteral(ctx);
 	}
 	

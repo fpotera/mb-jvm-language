@@ -125,7 +125,7 @@ public class Utils {
 		}
 
 		return className.substring(0, 1).toUpperCase() + className.substring(1).toLowerCase();
-	}
+	}	
 	
 	public static String getJavaMethodName ( String messageBuilderStatementName ) {
 		return messageBuilderStatementName.toLowerCase();

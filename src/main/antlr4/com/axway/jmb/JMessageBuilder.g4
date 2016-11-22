@@ -54,6 +54,7 @@ adhocModuleMemberDeclaration
 	:	fieldDeclaration
 	|	recordTypeDeclaration
 	|	procedureDeclaration
+	|	procedureCall
 //	|	statement
 ;
 
@@ -65,7 +66,7 @@ moduleMemberDeclaration
 ;
 
 //////////////////////////////////////////////////////////////////////
-//////////////   FUNCTION  AND STATEMENT
+//////////////   FUNCTION  AND STATEMENT  DECLARATIONS
 
 functionDeclaration
     :   DECLARE PUBLIC? NATIVE? FUNCTION Identifier functionFormalParameters returnType?
@@ -99,7 +100,7 @@ procedureDeclaration
 ;
 
 procedureFormalParameters
-    :   '(' procedureFormalParameterList? ')'
+    :   procedureFormalParameterList?
     ;
 
 procedureFormalParameterList
@@ -149,6 +150,22 @@ block
 
 blockStatement
     :   fieldDeclaration
+    |	callInternalProcedure
+;
+
+///////////////////////////////////////////////////////////////////////////////////
+//////////////   PROCEDURE CALLS
+
+procedureCall
+	:	'CALL' expressionName procedureRealParameterList?
+;
+
+procedureRealParameterList
+	:	procedureRealParameter (noiseWord procedureRealParameter)*
+;
+
+procedureRealParameter
+	:	expression
 ;
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -312,7 +329,7 @@ expressionStatement
 ;
 
 statementExpression
-	:	printStatement
+	:	callInternalProcedure
 //	:	assignment
 //	|	preIncrementExpression
 //	|	preDecrementExpression
@@ -329,8 +346,12 @@ statementExpression
 
 // STATEMENTS
 
+callInternalProcedure
+	:	printStatement
+;
+
 printStatement
-	:	PRINT concatStrings+
+	:	PRINT concatStrings+ ';'
 ;
 
 // FUNCTIONS

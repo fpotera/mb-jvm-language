@@ -15,6 +15,8 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.commons.AdviceAdapter;
 
+import com.axway.jmb.ConstructorBuilder;
+
 /**
  * Bytecode generator for java class constructors.
  *
@@ -35,9 +37,10 @@ public class Constructors {
 		constructor.visitEnd();		
 	}
 	
-	public static AdviceAdapter startDefault( ClassVisitor clazz, String superClassInternalFQName ) {
+	public static ConstructorBuilder startDefault( ClassVisitor clazz, String superClassInternalFQName ) {
 		MethodVisitor mv = clazz.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-		AdviceAdapter constructor = new AdviceAdapter( ASM5, mv, ACC_PUBLIC, "<init>", "()V") {};
+		
+		ConstructorBuilder constructor = new ConstructorBuilder(ASM5, mv, "()V");
 		
 		constructor.visitCode();
 

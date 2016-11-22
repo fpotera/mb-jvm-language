@@ -10,11 +10,9 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.AdviceAdapter;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -31,11 +29,13 @@ import com.axway.jmb.builders.Modules;
 public class ModuleBuilder extends CheckClassAdapter {
 	
 	private String classFullyQualifiedName;
-	private AdviceAdapter constructor;
+	private ConstructorBuilder constructor;
 	
 	private RecordClassBuilder currentRecordTypeDefinition;
 	
 	private Map<String, ClassField> fields = new HashMap<String, ClassField>();
+	
+	private Map<Label,Integer> labels = new HashMap<Label,Integer>();
 	
 	public ModuleBuilder(int params, String moduleFullyQualifiedName, ClassWriter cw) {
 		super(ASM5, new TraceClassVisitor(cw, new PrintWriter (System.out)), false); 
@@ -46,7 +46,7 @@ public class ModuleBuilder extends CheckClassAdapter {
 		
 		defineMainMethod();
 		
-		Modules.buildGetModuleMethod( this, Type.getType(classFullyQualifiedName) );
+		Modules.buildGetModuleMethod( this, Type.getType(classFullyQualifiedName), getLabels() );
 				
 		constructor = Constructors.startDefault( this, Type.getType(JMBModule.class).getInternalName() );
 	}
@@ -83,6 +83,18 @@ public class ModuleBuilder extends CheckClassAdapter {
 	public MethodBuilder getMainMethod() {
 		return null;
 	}
+		
+	public Map<Label, Integer> getLabels() {
+		return labels;
+	}
 	
+	public ConstructorBuilder getConstructor() {
+		return constructor;
+	}	
+
+	public String getClassFullyQualifiedName() {
+		return classFullyQualifiedName;
+	}
+
 	protected void defineMainMethod () {}
 }
