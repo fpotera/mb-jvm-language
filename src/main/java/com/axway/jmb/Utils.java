@@ -46,6 +46,14 @@ public class Utils {
 	}
 	
 	public static String getFileName ( String pathToS4File ) {
+		String moduleNameFullyQualified = getModuleName( pathToS4File );
+		if ( moduleNameFullyQualified.contains("_") ) {
+			moduleNameFullyQualified = moduleNameFullyQualified.substring(moduleNameFullyQualified.lastIndexOf("_")+1);
+		}
+		return moduleNameFullyQualified;
+	}
+	
+	public static String getModuleName ( String pathToS4File ) {
 		String[] pathElem = pathToS4File.split("/");
 		String fileNameAndExtension;
 		if ( pathElem.length != 0 ) {
@@ -57,10 +65,11 @@ public class Utils {
 		
 		int extensionIndex = fileNameAndExtension.lastIndexOf(".");
 		extensionIndex = extensionIndex != -1 ? extensionIndex : fileNameAndExtension.length();
-		String fullyQualifiedModuleName = fileNameAndExtension.substring( fileNameAndExtension.lastIndexOf("_")+1, extensionIndex );
+		
+		String fullyQualifiedModuleName = fileNameAndExtension.substring( 0, extensionIndex );
 	
 		return fullyQualifiedModuleName;
-	}
+	}	
 	
 	public static boolean isModuleInterface ( String fileName ) {
 		return fileName.endsWith(".s4h");
@@ -122,7 +131,7 @@ public class Utils {
 		return messageBuilderStatementName.toLowerCase();
 	}
 	
-	public static String getInternalFullyQualifiedClassName ( String fullyQualifiedClassName ) {
+	public static String getInternalFQClassName ( String fullyQualifiedClassName ) {
 		return fullyQualifiedClassName.replace(".", "/");
 	}
 }

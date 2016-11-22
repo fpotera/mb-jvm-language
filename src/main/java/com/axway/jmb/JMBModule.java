@@ -27,19 +27,6 @@ import org.objectweb.asm.MethodVisitor;
 
 @SuppressWarnings("rawtypes")
 public abstract class JMBModule<T extends JMBModule> {
-	private static JMBModule instance;
-
-	public JMBModule( ) {
-		super();
-	}
-	
-	public static JMBModule getInstance( Class<? extends JMBModule> instanceType )  throws InstantiationException, IllegalAccessException {
-		if ( instance == null ) {
-			instance = instanceType.newInstance();
-		}
-		
-		return  instance;
-	}
 	
 /*	private ClassWriter cw;
 	private String clazz;// in fully qualified name (ex: java.lang.String)

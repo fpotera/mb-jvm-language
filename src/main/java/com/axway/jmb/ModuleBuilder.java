@@ -4,17 +4,23 @@
 // for additional copyright notices.
 package com.axway.jmb;
 
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.V1_7;
+import static org.objectweb.asm.Opcodes.ASM5;
 
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+
+import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.AdviceAdapter;
+import org.objectweb.asm.util.CheckClassAdapter;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 import com.axway.jmb.builders.Constructors;
 import com.axway.jmb.builders.Fields;
+import com.axway.jmb.builders.Modules;
 
 /**
  * Base class for Java MessageBuilder module generator.
@@ -22,7 +28,7 @@ import com.axway.jmb.builders.Fields;
  * @author Florin Potera
  */
 
-public class ClassBuilder extends ClassWriter {
+public class ModuleBuilder extends CheckClassAdapter {
 	
 	private String classFullyQualifiedName;
 	private AdviceAdapter constructor;
@@ -31,14 +37,18 @@ public class ClassBuilder extends ClassWriter {
 	
 	private Map<String, ClassField> fields = new HashMap<String, ClassField>();
 	
-	public ClassBuilder(int params, String moduleFullyQualifiedName) {
-		super(params);
+	public ModuleBuilder(int params, String moduleFullyQualifiedName, ClassWriter cw) {
+		super(ASM5, new TraceClassVisitor(cw, new PrintWriter (System.out)), false); 
 		
 		classFullyQualifiedName = Utils.getJavaFullyQualifiedInternalClassName( moduleFullyQualifiedName );
 		
-		visit(V1_7, ACC_PUBLIC, classFullyQualifiedName, null, "java/lang/Object", null);
+		Modules.buildModule(this, classFullyQualifiedName );
 		
-		constructor = Constructors.startDefault( this );
+		defineMainMethod();
+		
+		Modules.buildGetModuleMethod( this, Type.getType(classFullyQualifiedName) );
+				
+		constructor = Constructors.startDefault( this, Type.getType(JMBModule.class).getInternalName() );
 	}
 
 	public void addField (int access, ClassField field) {
@@ -65,8 +75,14 @@ public class ClassBuilder extends ClassWriter {
 	public void endRecordTypeDefinition () {
 		currentRecordTypeDefinition.visitEnd();
 		
-		visitInnerClass( Utils.getInternalFullyQualifiedClassName(currentRecordTypeDefinition.getRecordClassFullyQualifiedName()) , 
-				Utils.getInternalFullyQualifiedClassName(classFullyQualifiedName), 
+		visitInnerClass( Utils.getInternalFQClassName(currentRecordTypeDefinition.getRecordClassFullyQualifiedName()) , 
+				Utils.getInternalFQClassName(classFullyQualifiedName), 
 				currentRecordTypeDefinition.getJavaClassRecordName(), currentRecordTypeDefinition.getAccess());		
 	}
+	
+	public MethodBuilder getMainMethod() {
+		return null;
+	}
+	
+	protected void defineMainMethod () {}
 }

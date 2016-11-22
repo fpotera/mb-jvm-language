@@ -13,9 +13,11 @@ import static org.objectweb.asm.Opcodes.ASM5;
 import static org.objectweb.asm.Opcodes.V1_7;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +28,8 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
+import org.objectweb.asm.util.CheckClassAdapter;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 import com.axway.jmb.JMessageBuilderParser.AdhocModuleBodyDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.BuiltinFunctionCallContext;
@@ -54,9 +58,10 @@ import com.axway.jmb.builtin.Builtin;
  */
 
 public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void> {
-	private ClassBuilder mainClass;
+	private ModuleBuilder currentModule;
 	private MethodBuilder currentMethod;
 	private ClassWriter currentInnerClass;
+	private ClassWriter currentClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 	
 	private boolean isInterface = false;	
 	private String executableModuleName;
@@ -70,7 +75,7 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 	}
 	
 	public byte[] getClassBytes() {
-		return mainClass.toByteArray();
+		return currentClassWriter.toByteArray();
 	}
 	
 	@Override
@@ -80,12 +85,14 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		
 		if ( currentMethod != null ) {
 			currentMethod.returnValue();
-			currentMethod.endMethod();
-			currentMethod.visitMaxs(12, 2);			
-//			currentMethod.visitEnd();	
+			currentMethod.visitMaxs(10, 5);
+//			currentMethod.endMethod();			
+			currentMethod.visitEnd();	
+		}
+		if ( currentModule != null ) {
+			currentModule.visitEnded();
 		}
 		
-		mainClass.visitEnded();
 		return null;
 	}
 		
@@ -106,21 +113,17 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		return super.visitModuleDeclaration(ctx);
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	//////   EXECUTABLE MODULE DECLARATION
+	
 	@Override
 	public Void visitAdhocModuleBodyDeclaration(AdhocModuleBodyDeclarationContext ctx) {		
 		if ( !classCreated ) {
 			debug("Generate executable module:"+executableModuleName);
 	
-			mainClass = new ExecutableClassBuilder(0, executableModuleName);
+			currentModule = new ExecutableModuleBuilder(0, executableModuleName, currentClassWriter);
 			
-//			mainClass.visit(V1_7, ACC_PUBLIC, classFullQualifiedName.replace(".", "/"), null, "java/lang/Object", null);
-			
-			MethodVisitor mv = mainClass.visitMethod(ACC_PUBLIC+ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
-			
-			currentMethod = new MethodBuilder( ASM5, mv, ACC_PUBLIC+ACC_STATIC, "main", "([Ljava/lang/String;)V" );
-			
-//			currentMethod.visitCode();
-//			currentMethod.loadArgs();	
+			currentMethod = currentModule.getMainMethod();
 			
 			classCreated = true;
 		}
@@ -128,6 +131,9 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		return super.visitAdhocModuleBodyDeclaration(ctx);
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	//////   SIMPLE MODULE DECLARATION	
+	
 	@Override
 	public Void visitModuleIdentifier(ModuleIdentifierContext ctx) {
 		
@@ -139,7 +145,7 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		int generate = isInterface ? ACC_INTERFACE : 0 ;
 		String[] interfaces = isInterface ? null : new String[] { interfaceFullQualifiedName.replace(".", "/") };
 		
-		mainClass.visit(V1_7, ACC_PUBLIC + generate,
+		currentModule.visit(V1_7, ACC_PUBLIC + generate,
 				classFullQualifiedName.replace(".", "/"), null, Type.getType(Object.class).getInternalName(), interfaces);
 		
 		debug("Generate class:"+classFullQualifiedName);
@@ -207,7 +213,7 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 				((RecordClassBuilder) currentInnerClass).addField( getFieldAccess( ctx.PUBLIC() ), newVariable );				
 			}
 			else {
-				mainClass.addField( getFieldAccess( ctx.PUBLIC() ), newVariable );
+				currentModule.addField( getFieldAccess( ctx.PUBLIC() ), newVariable );
 			}
 		}
 
@@ -221,24 +227,25 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 	public Void visitRecordTypeDeclaration(RecordTypeDeclarationContext ctx) {
 		debug(" visitRecordTypeDeclaration()");
 
-		currentInnerClass = mainClass.beginRecordTypeDefinition(ctx.recordIdentifier().getText(), getTypeAccess(ctx.PUBLIC()));
+		currentInnerClass = currentModule.beginRecordTypeDefinition(ctx.recordIdentifier().getText(), getTypeAccess(ctx.PUBLIC()));
 				
 		debug("RECORD :"+ctx.recordIdentifier().getText());
 		
 		super.visitRecordTypeDeclaration(ctx);
 		
-		mainClass.endRecordTypeDefinition();
+		currentModule.endRecordTypeDefinition();
 		
-		File pathToClassFile = new File ( "inner.class");
-        
-        OutputStream os;
-		try {
-			os = new FileOutputStream( pathToClassFile );
-	        os.write(currentInnerClass.toByteArray());
-	        os.close();
-		} catch ( IOException e) {
-			e.printStackTrace();
-		}             
+		String javaFullyQualifiedClassName = ((RecordClassBuilder)currentInnerClass).getRecordClassFullyQualifiedName();
+		
+        ClassFileWriter cw = new  ClassFileWriter( ClassFileWriter.BASE_DIR, javaFullyQualifiedClassName);   
+        try {
+			cw.open();
+	        cw.write(currentInnerClass.toByteArray());
+	        cw.close();	
+		} catch ( IOException e1) {
+			e1.printStackTrace();
+		}
+	            
 		currentInnerClass = null;
 		
 		return null;
@@ -272,7 +279,7 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 //			debug(" visitProcedureDeclaration()"+ctx.procedureFormalParameters().procedureFormalParameterList().procedureFormalParameter().size());		
 		}
 		else {
-			currentMethod = Methods.buildProcedureWithoutParameters(mainClass, ctx.Identifier().getText(), getMethodAccess(ctx.PUBLIC()));
+			currentMethod = Methods.buildProcedureWithoutParameters(currentModule, ctx.Identifier().getText(), getMethodAccess(ctx.PUBLIC()));
 		}
 		
 		super.visitProcedureDeclaration(ctx);

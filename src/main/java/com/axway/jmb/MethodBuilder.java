@@ -27,6 +27,7 @@ public class MethodBuilder extends AdviceAdapter {
 		
 	public MethodBuilder(int api, MethodVisitor mv, int access, String name, String desc) {
 		super(api, mv, access, name, desc);
+		visitCode();
 	}
 
 	public void addLocalVariable ( LocalVariable var ) {

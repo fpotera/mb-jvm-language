@@ -6,7 +6,7 @@ package com.axway.jmb.builders;
 
 import static org.objectweb.asm.Opcodes.ASM5;
 
-import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
 import com.axway.jmb.MethodBuilder;
@@ -20,11 +20,14 @@ import com.axway.jmb.Utils;
 
 public class Methods {
 	
-	public static MethodBuilder buildProcedureWithoutParameters ( ClassWriter clazz, String messageBuilderStatementName, int accessType ) {
+	public static MethodBuilder buildProcedureWithoutParameters ( ClassVisitor clazz, String messageBuilderStatementName, int accessType ) {
+		debug("buildProcedureWithoutParameters("+clazz+","+messageBuilderStatementName+","+accessType);
 		MethodVisitor mv = clazz.visitMethod(accessType, Utils.getJavaMethodName(messageBuilderStatementName), "()V", null, null);
 		
 		return new MethodBuilder( ASM5, mv, accessType, Utils.getJavaMethodName(messageBuilderStatementName), "()V" );				
 	}
 	
-	
+	private static void debug ( String str ) {
+		System.out.println( str );;
+	}
 }

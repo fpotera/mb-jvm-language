@@ -11,7 +11,7 @@ import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.RETURN;
 
-import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.commons.AdviceAdapter;
 
@@ -23,26 +23,25 @@ import org.objectweb.asm.commons.AdviceAdapter;
 
 public class Constructors {
 	
-	public static void buildDefault( ClassWriter clazz ) {
-		MethodVisitor constructor = clazz.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+	public static void buildDefault( ClassVisitor clazz , String superClassInternalFQName) {
+		MethodVisitor mv = clazz.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+		AdviceAdapter constructor = new AdviceAdapter( ASM5, mv, ACC_PUBLIC, "<init>", "()V") {};
 		constructor.visitCode();
 		constructor.visitMaxs(4, 1);
-		constructor.visitVarInsn(ALOAD, 0);
-		constructor.visitInsn(DUP);
-		constructor.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+		
+		callSuperConstructor( constructor, superClassInternalFQName );
+		
 		constructor.visitInsn(RETURN);
 		constructor.visitEnd();		
 	}
 	
-	public static AdviceAdapter startDefault( ClassWriter clazz ) {
+	public static AdviceAdapter startDefault( ClassVisitor clazz, String superClassInternalFQName ) {
 		MethodVisitor mv = clazz.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
 		AdviceAdapter constructor = new AdviceAdapter( ASM5, mv, ACC_PUBLIC, "<init>", "()V") {};
 		
 		constructor.visitCode();
 
-		constructor.visitVarInsn(ALOAD, 0);
-		constructor.visitInsn(DUP);
-		constructor.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+		callSuperConstructor( constructor, superClassInternalFQName );
 				
 		return constructor;
 	}
@@ -51,6 +50,14 @@ public class Constructors {
 		constructor.visitInsn(RETURN);
 		constructor.visitMaxs(maxStacks, maxLocals);
 		constructor.visitEnd();	
+	}
+	
+	private static void callSuperConstructor ( AdviceAdapter constructor, String superClassInternalFQName ) {
+
+		constructor.visitVarInsn(ALOAD, 0);
+		constructor.visitInsn(DUP);
+		constructor.visitMethodInsn(INVOKESPECIAL, superClassInternalFQName, "<init>", "()V", false);	
+
 	}
 	
 }
