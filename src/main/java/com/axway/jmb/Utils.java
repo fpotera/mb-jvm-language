@@ -106,6 +106,10 @@ public class Utils {
 		return  getJavaFullyQualifiedClassName( moduleNameOfMessageBuilder ).replace(".", "/");
 	}
 	
+	public static Type getJavaFullyQualifiedClassType ( String moduleNameOfMessageBuilder ) {
+		return Type.getObjectType( getInternalFQClassName (getJavaFullyQualifiedClassName(moduleNameOfMessageBuilder)) );
+	}
+	
 	public static String getJavaFullyQualifiedClassName ( String moduleNameOfMessageBuilder ) {
 		String packageName = "";
 		if ( moduleNameOfMessageBuilder.contains("_") ) {

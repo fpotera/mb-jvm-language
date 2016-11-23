@@ -1,5 +1,5 @@
 package sl;
 
 public interface IString {
-	Object fieldexplode (Object ... args);
+	Object fieldexplode (Object... args);
 }

@@ -95,6 +95,18 @@ public class ModuleBuilder extends CheckClassAdapter {
 	public String getClassFullyQualifiedName() {
 		return classFullyQualifiedName;
 	}
+	
+	public boolean isFieldDefined ( String fieldName ) {
+		ClassField cf = fields.get(fieldName);
+		if ( cf != null ) {
+			return true;
+		}
+		return false;
+	}
+	
+	public ClassField getField( String fieldName ) {
+		return fields.get(fieldName);
+	}
 
 	protected void defineMainMethod () {}
 }

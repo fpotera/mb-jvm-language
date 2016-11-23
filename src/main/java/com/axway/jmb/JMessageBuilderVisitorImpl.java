@@ -22,11 +22,13 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import com.axway.jmb.JMessageBuilderParser.AdhocModuleBodyDeclarationContext;
+import com.axway.jmb.JMessageBuilderParser.AssignmentContext;
 import com.axway.jmb.JMessageBuilderParser.BuiltinFunctionCallContext;
 import com.axway.jmb.JMessageBuilderParser.CompilationUnitContext;
 import com.axway.jmb.JMessageBuilderParser.ConcatStringsContext;
 import com.axway.jmb.JMessageBuilderParser.FieldDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.FloatingPointLiteralContext;
+import com.axway.jmb.JMessageBuilderParser.FunctionInvocationContext;
 import com.axway.jmb.JMessageBuilderParser.IntegerLiteralContext;
 import com.axway.jmb.JMessageBuilderParser.ModuleDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.ModuleIdentifierContext;
@@ -334,6 +336,9 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		return null;
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	//////   PUSH LITERALS ON STACK	
+	
 	@Override
 	public Void visitIntegerLiteral(IntegerLiteralContext ctx) {
 		if ( currentMethod != null ) {
@@ -366,6 +371,98 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		}
 		return super.visitStringLiteral(ctx);
 	}
+
+	///////////////////////////////////////////////////////////////////////////////
+	//////   ASSIGNMENTS		
+
+	@Override
+	public Void visitAssignment(AssignmentContext ctx) {
+		super.visitAssignment(ctx);
+		debug(" visitAssignment() :"+ctx.leftHandSide().getText());	
+		
+		try {
+			String varName = convertVariableName ( ctx.leftHandSide().getText() );
+			if ( currentMethod != null ) {
+				if ( currentMethod.isLocalVariableDefined( varName ) ) {
+					currentMethod.storeInLocalVar( varName );
+				}
+				else if ( currentModule.isFieldDefined(varName) ) {
+					currentMethod.storeInField( currentModule, varName );
+				}
+				else {
+					throw new CompileException("Variable "+varName+" used, but not defined.");
+				}
+			}
+			else {
+				if ( currentConstructor.isLocalVariableDefined( varName ) ) {
+					currentConstructor.storeInLocalVar( varName );
+				}
+				else if ( currentModule.isFieldDefined(varName) ) {
+					currentConstructor.storeInField( currentModule, varName );
+				}
+				else {
+					throw new CompileException("Variable "+varName+" used, but not defined.");
+				}
+			}
+		} catch (CompileException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}		
+			
+		return null; 
+	}
+
+	///////////////////////////////////////////////////////////////////////////////
+	//////   FUNCTION CALL
+	
+	@Override
+	public Void visitFunctionInvocation(FunctionInvocationContext ctx) {
+		debug("visitFunctionInvocation()");
+		String functionFullName = ctx.functionName().getText();
+		String moduleName = "";
+		String functionName = functionFullName;
+		
+		if ( functionFullName.contains(".") ) {
+			moduleName = functionFullName.split("\\.")[0];
+			functionName = functionFullName.split("\\.")[1];
+		}
+		debug("call function :"+Utils.getJavaFullyQualifiedClassName(moduleName)+"."+Utils.getJavaMethodName(functionName)+"(...)");
+		
+		Type moduleType = Utils.getJavaFullyQualifiedClassType( Utils.getJavaFullyQualifiedClassName(moduleName) ); 
+		Method getModuleMethod = new Method("getModule", moduleType, new Type[0]);
+		Method calledFunction = new Method(Utils.getJavaMethodName(functionName), Type.getObjectType("java/lang/Object"), new Type[]{Type.getObjectType("[Ljava/lang/Object;")});
+		
+		if ( "".equals(moduleName) ) {
+			// internal module in an executable module
+		}
+		else {
+			if ( currentMethod != null ) {			
+				currentMethod.invokeStatic(moduleType, getModuleMethod);
+			}
+			else {
+				currentConstructor.invokeStatic(moduleType, getModuleMethod);
+			}
+		}
+		
+		super.visitFunctionInvocation(ctx);
+
+		if ( "".equals(moduleName) ) {
+			// internal module in an executable module
+		}
+		else {
+			if ( currentMethod != null ) {
+				currentMethod.invokeVirtual(moduleType, calledFunction);
+			}
+			else {
+				currentConstructor.invokeVirtual(moduleType, calledFunction);
+			}
+		}
+		
+		return null;
+	}	
+	
+	///////////////////////////////////////////////////////////////////////////////
+	//////   CALL BUILTIN PRINT PROCEDURE		
 	
 	@Override
 	public Void visitPrintStatement(PrintStatementContext ctx) {
@@ -399,22 +496,7 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		
 		return null;
 	}
-/*
-	@Override
-	public Void visitAssignment(AssignmentContext ctx) {
-		super.visitAssignment(ctx);
-		debug(" visitAssignment() ");	
-		
-		try {
-			currentMethod.storeInLocalVar( convertVariableName ( ctx.leftHandSide().getText() ) );
-		} catch (CompileException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}		
-			
-		return null; 
-	}
-*/
+
 	private void debug ( String str ) {
 		System.out.println( str );
 	}
@@ -474,4 +556,5 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 	private boolean isExecutableModule () {
 		return executableModuleName != null;
 	}
+
 }

@@ -55,7 +55,9 @@ adhocModuleMemberDeclaration
 	|	recordTypeDeclaration
 	|	procedureDeclaration
 	|	procedureCall
+//	|	expression
 //	|	statement
+	|	';'
 ;
 
 moduleMemberDeclaration
@@ -151,6 +153,8 @@ block
 blockStatement
     :   fieldDeclaration
     |	callInternalProcedure
+    |	assignmentExpression ';'
+    |	';'
 ;
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -223,10 +227,45 @@ expression
 	:	builtinFunctionCall
 	|	primary
 //	|	assignmentExpression
+	|	functionInvocation
 //	|	expression '.' Identifier
 //	|	expression '(' expressionList? ')'
 ;
 
+assignmentExpression
+	:	 assignment
+//	|	conditionalExpression
+	;
+
+assignment
+	:	leftHandSide ASSIGN expression
+;
+
+leftHandSide
+	:	 fieldAccess
+//	|	expressionName
+//	|	arrayAccess
+	;
+
+fieldAccess
+	:	variableIdentifier
+//	:	primary '.' Identifier
+;
+
+////////////////////////////////////////////////////////////////////////////////////
+////////////   FUNCTION INVOCATION
+
+functionInvocation
+	: functionName '(' argumentList? ')'
+;
+
+argumentList
+	:	expression (',' expression)*
+;
+
+functionName
+	:	expressionName
+;
 
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////   TYPES
@@ -338,7 +377,6 @@ statementExpression
 //	|	methodInvocation
 //	|	classInstanceCreationExpression
 ;
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -532,18 +570,6 @@ CARET : '^';
 MOD : '%';
 ARROW : '->';
 COLONCOLON : '::';
-
-ADD_ASSIGN : '+=';
-SUB_ASSIGN : '-=';
-MUL_ASSIGN : '*=';
-DIV_ASSIGN : '/=';
-AND_ASSIGN : '&=';
-OR_ASSIGN : '|=';
-XOR_ASSIGN : '^=';
-MOD_ASSIGN : '%=';
-LSHIFT_ASSIGN : '<<=';
-RSHIFT_ASSIGN : '>>=';
-URSHIFT_ASSIGN : '>>>=';
 
 // identifiers
 
