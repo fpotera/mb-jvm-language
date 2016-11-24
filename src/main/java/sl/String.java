@@ -20,7 +20,7 @@ public class String implements IString {
 				result = ( new java.lang.String( (char[]) args[0] ) ).split( separator );
 			}
 		}		
-		return result[0];
+		return result;
 	}
 	
 	public static String getModule () {

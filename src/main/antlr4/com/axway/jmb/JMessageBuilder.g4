@@ -551,7 +551,7 @@ LT : '<';
 BANG : '!';
 TILDE : '~';
 QUESTION : '?';
-COLON : ':';
+//COLON : ':';
 EQUAL : '==';
 LE : '<=';
 GE : '>=';

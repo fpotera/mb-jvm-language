@@ -122,6 +122,10 @@ public class MethodBuilder extends AdviceAdapter {
 			push( (int) lv.getFixedStringLength() );
 			invokeStatic(Type.getType(Arrays.class), Method.getMethod("char[] copyOf(char[], int)"));
 		}
+		else if ( lv.getType() == JMBVariableType.STRING ) {
+			invokeVirtual(Type.getType(Object.class),
+			         Method.getMethod("String toString()"));			
+		}
 		
 		if ( lv.isArray() ) {
 			storeLocal( lv.getArrayPosition(), lv.getType().getArrayJvmType( lv.getArrayDimension() ) );
@@ -142,6 +146,9 @@ public class MethodBuilder extends AdviceAdapter {
 			         Method.getMethod("char[] toCharArray()"));
 			push( (int) field.getFixedStringLength() );
 			invokeStatic(Type.getType(Arrays.class), Method.getMethod("char[] copyOf(char[], int)"));
+		} else if( field.getType() == JMBVariableType.STRING ) {
+			invokeVirtual(Type.getType(Object.class),
+			         Method.getMethod("String toString()"));				
 		}
 		loadThis();
 		swap();

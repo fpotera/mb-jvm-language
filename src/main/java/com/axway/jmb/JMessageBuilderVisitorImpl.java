@@ -18,6 +18,7 @@ import java.util.Map;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
@@ -62,6 +63,10 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 	private String executableModuleName;
 		
 	private boolean classCreated;
+	
+	// for statement calls
+	boolean isStatementCall = false;
+	int statementCallCurrentParameterIndex = 0;
 	
 	private Map<String, String> includeTypes = new HashMap<String, String>();
 	
@@ -317,7 +322,7 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		else {
 			
 		}
-		
+	
 		return null;
 	}	
 	
@@ -341,34 +346,22 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 	
 	@Override
 	public Void visitIntegerLiteral(IntegerLiteralContext ctx) {
-		if ( currentMethod != null ) {
-			currentMethod.pushOnStack( new Long ( ctx.getText() ) );
-		}
-		else {
-			currentConstructor.pushOnStack( new Long ( ctx.getText() ) );
-		}
+		saveLiteral( new Long ( ctx.getText() ) );
+			
 		return super.visitIntegerLiteral(ctx);
 	}	
 
 	@Override
 	public Void visitFloatingPointLiteral(FloatingPointLiteralContext ctx) {
-		if ( currentMethod != null ) {
-			currentMethod.pushOnStack( new Double( ctx.getText() ) );
-		}
-		else {
-			currentConstructor.pushOnStack( new Long ( ctx.getText() ) );
-		}
+		saveLiteral( new Double( ctx.getText() ) );
+
 		return super.visitFloatingPointLiteral(ctx);
 	}
 	
 	@Override
 	public Void visitStringLiteral(StringLiteralContext ctx) {
-		if ( currentMethod != null ) {
-			currentMethod.pushOnStack( ctx.getText().substring(1, ctx.getText().length()-1) );
-		}
-		else {
-			currentConstructor.pushOnStack( new Long ( ctx.getText() ) );
-		}
+		saveLiteral( ctx.getText().substring(1, ctx.getText().length()-1) );
+		
 		return super.visitStringLiteral(ctx);
 	}
 
@@ -422,15 +415,20 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		String moduleName = "";
 		String functionName = functionFullName;
 		
+		isStatementCall = true;
+		statementCallCurrentParameterIndex = 0;
+		
 		if ( functionFullName.contains(".") ) {
 			moduleName = functionFullName.split("\\.")[0];
 			functionName = functionFullName.split("\\.")[1];
 		}
 		debug("call function :"+Utils.getJavaFullyQualifiedClassName(moduleName)+"."+Utils.getJavaMethodName(functionName)+"(...)");
 		
-		Type moduleType = Utils.getJavaFullyQualifiedClassType( Utils.getJavaFullyQualifiedClassName(moduleName) ); 
+		Type moduleType = Utils.getJavaFullyQualifiedClassType( moduleName );
+		
 		Method getModuleMethod = new Method("getModule", moduleType, new Type[0]);
 		Method calledFunction = new Method(Utils.getJavaMethodName(functionName), Type.getObjectType("java/lang/Object"), new Type[]{Type.getObjectType("[Ljava/lang/Object;")});
+		int arraySize = ctx.argumentList().expression().size(); 
 		
 		if ( "".equals(moduleName) ) {
 			// internal module in an executable module
@@ -438,9 +436,13 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		else {
 			if ( currentMethod != null ) {			
 				currentMethod.invokeStatic(moduleType, getModuleMethod);
+				currentMethod.visitInsn(Opcodes.ICONST_0+arraySize);
+				currentMethod.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
 			}
 			else {
 				currentConstructor.invokeStatic(moduleType, getModuleMethod);
+				currentConstructor.visitInsn(Opcodes.ICONST_0+arraySize);
+				currentConstructor.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
 			}
 		}
 		
@@ -457,6 +459,8 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 				currentConstructor.invokeVirtual(moduleType, calledFunction);
 			}
 		}
+		
+		isStatementCall = false;
 		
 		return null;
 	}	
@@ -557,4 +561,29 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		return executableModuleName != null;
 	}
 
+	private void saveLiteral ( Object obj ) {
+		if ( !isStatementCall ) {
+			if ( currentMethod != null ) {
+				currentMethod.pushOnStack( obj );
+			}
+			else {
+				currentConstructor.pushOnStack( obj );
+			}
+		}
+		else {
+			if ( currentMethod != null ) {
+				currentMethod.visitInsn(Opcodes.DUP);
+				currentMethod.visitInsn(Opcodes.ICONST_0+statementCallCurrentParameterIndex);
+				currentMethod.visitLdcInsn( obj );
+				currentMethod.visitInsn(Opcodes.AASTORE);
+			}
+			else {
+				currentConstructor.visitInsn(Opcodes.DUP);
+				currentConstructor.visitInsn(Opcodes.ICONST_0+statementCallCurrentParameterIndex);
+				currentConstructor.visitLdcInsn( obj );
+				currentConstructor.visitInsn(Opcodes.AASTORE);
+			}
+			statementCallCurrentParameterIndex++;
+		}			
+	}
 }
