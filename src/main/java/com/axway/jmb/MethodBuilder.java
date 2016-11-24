@@ -125,8 +125,12 @@ public class MethodBuilder extends AdviceAdapter {
 		else if ( lv.getType() == JMBVariableType.STRING ) {
 			invokeVirtual(Type.getType(Object.class),
 			         Method.getMethod("String toString()"));			
+		} else if (lv.getType() == JMBVariableType.INTEGER) {
+			visitTypeInsn(CHECKCAST, "java/lang/Long");
+		} else if (lv.getType() == JMBVariableType.FLOAT) {
+			visitTypeInsn(CHECKCAST, "java/lang/Double");
 		}
-		
+
 		if ( lv.isArray() ) {
 			storeLocal( lv.getArrayPosition(), lv.getType().getArrayJvmType( lv.getArrayDimension() ) );
 		}
@@ -137,29 +141,30 @@ public class MethodBuilder extends AdviceAdapter {
 		debug( "## store _"+lv.getArrayPosition() );
 	}
 	
-	public void storeInField( ModuleBuilder mb, String varName ) throws CompileException {
+	public void storeInField(ModuleBuilder mb, String varName) throws CompileException {
 		ClassField field = mb.getField(varName);
-		if ( field==null )
-			throw new CompileException("Class field "+varName+" used, but not defined.");
-		if ( field.getType() == JMBVariableType.FIXED_STRING ) {
-			invokeVirtual(Type.getType(String.class),
-			         Method.getMethod("char[] toCharArray()"));
-			push( (int) field.getFixedStringLength() );
+		if (field == null)
+			throw new CompileException("Class field " + varName + " used, but not defined.");
+		if (field.getType() == JMBVariableType.FIXED_STRING) {
+			invokeVirtual(Type.getType(String.class), Method.getMethod("char[] toCharArray()"));
+			push((int) field.getFixedStringLength());
 			invokeStatic(Type.getType(Arrays.class), Method.getMethod("char[] copyOf(char[], int)"));
-		} else if( field.getType() == JMBVariableType.STRING ) {
-			invokeVirtual(Type.getType(Object.class),
-			         Method.getMethod("String toString()"));				
+		} else if (field.getType() == JMBVariableType.STRING) {
+			invokeVirtual(Type.getType(Object.class), Method.getMethod("String toString()"));
+		} else if (field.getType() == JMBVariableType.INTEGER) {
+			visitTypeInsn(CHECKCAST, "java/lang/Long");
+		} else if (field.getType() == JMBVariableType.FLOAT) {
+			visitTypeInsn(CHECKCAST, "java/lang/Double");
 		}
 		loadThis();
 		swap();
-		if ( field.isArray() ) {
-			putField(Type.getObjectType(mb.getClassFullyQualifiedName()), varName, field.getType().getArrayJvmType( field.getArrayDimension() ));
-		}
-		else {
+		if (field.isArray()) {
+			putField(Type.getObjectType(mb.getClassFullyQualifiedName()), varName, field.getType().getArrayJvmType(field.getArrayDimension()));
+		} else {
 			putField(Type.getObjectType(mb.getClassFullyQualifiedName()), varName, field.getType().getJvmType());
 		}
-		
-		debug( "## put field "+field.getName() );
+
+		debug("## put field " + field.getName());
 	}
 	
 	public void printStatement ( List<Object> objs ) {

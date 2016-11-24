@@ -428,7 +428,7 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		
 		Method getModuleMethod = new Method("getModule", moduleType, new Type[0]);
 		Method calledFunction = new Method(Utils.getJavaMethodName(functionName), Type.getObjectType("java/lang/Object"), new Type[]{Type.getObjectType("[Ljava/lang/Object;")});
-		int arraySize = ctx.argumentList().expression().size(); 
+		int arraySize = ctx.argumentList() != null ? ctx.argumentList().expression().size() : 0; 
 		
 		if ( "".equals(moduleName) ) {
 			// internal module in an executable module

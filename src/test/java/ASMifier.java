@@ -1,6 +1,8 @@
 
 public class ASMifier {
 	public Object[] call (Object... args) {		
+		Long longObject = (Long) new Object();
+		
 		return args;
 	}
 	
