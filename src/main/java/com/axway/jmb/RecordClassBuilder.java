@@ -7,6 +7,7 @@ package com.axway.jmb;
 import static org.objectweb.asm.Opcodes.V1_7;
 
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.AdviceAdapter;
 
 import com.axway.jmb.builders.Constructors;
@@ -32,13 +33,13 @@ public class RecordClassBuilder extends ClassWriter {
 		this.access = access;
 		
 		visit(V1_7, access, 
-				Utils.getInternalFullyQualifiedClassName( getRecordClassFullyQualifiedName() ), 
+				Utils.getInternalFQClassName( getRecordClassFullyQualifiedName() ), 
 				null, "java/lang/Object", null);
 		
-		visitOuterClass( Utils.getInternalFullyQualifiedClassName( javaFullyQuallifiedOuterClass ), 
+		visitOuterClass( Utils.getInternalFQClassName( javaFullyQuallifiedOuterClass ), 
 				null, null);//de vazut pentru recordori definite in metode       -  TODO
 		
-		constructor = Constructors.startDefault( this );			
+		constructor = Constructors.startDefault( this, Type.getType(Object.class).getInternalName() );			
 	}
 	
 	

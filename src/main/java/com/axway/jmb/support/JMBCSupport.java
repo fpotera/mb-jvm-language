@@ -1,6 +1,16 @@
+// Copyright (c) Axway Inc. All Rights Reserved.
+// Please refer to the file "LICENSE" for further important copyright
+// and licensing information.  Please also refer to the documentation
+// for additional copyright notices.
 package com.axway.jmb.support;
 
-public class JMCSupport {
+/**
+ * Java methods used as support of JMB compiler at execution of generated code.
+ *
+ * @author Florin Potera
+ */
+
+public class JMBCSupport {
 	public static char[] createFixedString ( int length ) {
 		return new String ( new char[length] ).replace("\0", " ").toCharArray();
 	}
@@ -30,5 +40,5 @@ public class JMCSupport {
 		return str.toCharArray();
 	}
 	
-	
+
 }

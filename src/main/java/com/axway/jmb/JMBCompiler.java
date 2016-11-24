@@ -5,11 +5,8 @@
 
 package com.axway.jmb;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -21,14 +18,13 @@ import org.antlr.v4.runtime.tree.ParseTree;
  * @author Florin Potera
  */
 
-public class JMBCompiler {	
+public class JMBCompiler {
+	
     private ANTLRInputStream input;
     private JMessageBuilderLexer lexer;
     private CommonTokenStream tokens;
     private JMessageBuilderParser parser; 
     private JMessageBuilderVisitorImpl visitor;
-    
-    private static final String BASE_DIR = "target/classes";
 	
 	public JMBCompiler(InputStream is) throws IOException {
         input = new ANTLRInputStream(is);
@@ -65,28 +61,25 @@ public class JMBCompiler {
 
         String pakage = Utils.getPackage( inputFile );
         String fileName = ( Utils.isModuleInterface( inputFile ) ? "I" : "" ) + Utils.getClass( inputFile );
-        String executableModuleName = Utils.getFileName( inputFile );
+        String executableModuleName = Utils.getModuleName( inputFile );
         
         JMBCompiler compiler = new JMBCompiler(is);        
         ParseTree tree = compiler.parse();
         compiler.setVisitor( new JMessageBuilderVisitorImpl( Utils.isExecutableModule(inputFile) ? executableModuleName : null ) );
         compiler.visit(tree);       
         byte[] clazz = compiler.buildClass();
+ 
+        String javaFullyQualifiedClassName = pakage+"."+fileName;
         
-        File pathToClassFile = new File ( BASE_DIR + File.separator + pakage.replaceAll("\\.", File.separator) );
+        ClassFileWriter cw = new  ClassFileWriter( ClassFileWriter.BASE_DIR, javaFullyQualifiedClassName);   
+        cw.open();
+        cw.write(clazz);
+        cw.close();
         
-        pathToClassFile.mkdirs();
-        pathToClassFile = new File ( pathToClassFile.getAbsolutePath() + File.separator + fileName + ".class");
-        
-        OutputStream os =  new FileOutputStream( pathToClassFile );             
-        os.write(clazz);
-        os.close();
         System.out.println("Compiled!!!");
+        
+	
 	}
-	
 
-	
-
-	
-	
 }
+

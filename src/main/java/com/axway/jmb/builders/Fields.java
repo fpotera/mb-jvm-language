@@ -4,7 +4,7 @@
 // for additional copyright notices.
 package com.axway.jmb.builders;
 
-import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.AdviceAdapter;
 import org.objectweb.asm.commons.Method;
@@ -19,7 +19,7 @@ import com.axway.jmb.JMBVariableType;
  */
 
 public class Fields {
-	public static void addFieldToClass(int access, ClassField field, AdviceAdapter constructor, ClassWriter clazz, String classFullyQualifiedName ){
+	public static void addFieldToClass(int access, ClassField field, AdviceAdapter constructor, ClassVisitor clazz, String classFullyQualifiedName ){
 		if ( field.isArray() ) {
 			clazz.visitField( access, field.getName(), field.getType().getArrayJvmType( field.getArrayDimension() ).getDescriptor(), null, null);	
 

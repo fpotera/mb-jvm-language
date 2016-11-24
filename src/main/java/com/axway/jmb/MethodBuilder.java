@@ -27,11 +27,12 @@ public class MethodBuilder extends AdviceAdapter {
 		
 	public MethodBuilder(int api, MethodVisitor mv, int access, String name, String desc) {
 		super(api, mv, access, name, desc);
+		visitCode();
 	}
 
 	public void addLocalVariable ( LocalVariable var ) {
 		int varPos;
-		debug(" addLocalVariable()"+this);
+		debug(" addLocalVariable():"+var.getName()+" "+this);
 		if ( var.isArray() ) {
 			varPos = newLocal( var.getType().getArrayJvmType( var.getArrayDimension() ) );
 			push( var.getArrayDimension() );
@@ -77,14 +78,14 @@ public class MethodBuilder extends AdviceAdapter {
 		return localVars.get( name );
 	}
 	
-	public void assignValue( LocalVariable var, Object val ) {
-
-		if ( var.getType() == JMBVariableType.STRING ) {
-			push( val instanceof String ? (String) val : null ); // if not string must throw an error - TODO
-			invokeConstructor( var.getType().getJvmType(), Method.getMethod("void <init>(java.lang.String)") );
-			storeLocal( var.getArrayPosition(), var.getType().getJvmType() );			
-		}		
-	}
+//	public void assignValue( LocalVariable var, Object val ) {
+//
+//		if ( var.getType() == JMBVariableType.STRING ) {
+//			push( val instanceof String ? (String) val : null ); // if not string must throw an error - TODO
+//			invokeConstructor( var.getType().getJvmType(), Method.getMethod("void <init>(java.lang.String)") );
+//			storeLocal( var.getArrayPosition(), var.getType().getJvmType() );			
+//		}		
+//	}
 	
 	public void pushOnStack( Object val ) {
 		debug( "## push value "+val );
@@ -121,6 +122,10 @@ public class MethodBuilder extends AdviceAdapter {
 			push( (int) lv.getFixedStringLength() );
 			invokeStatic(Type.getType(Arrays.class), Method.getMethod("char[] copyOf(char[], int)"));
 		}
+		else if ( lv.getType() == JMBVariableType.STRING ) {
+			invokeVirtual(Type.getType(Object.class),
+			         Method.getMethod("String toString()"));			
+		}
 		
 		if ( lv.isArray() ) {
 			storeLocal( lv.getArrayPosition(), lv.getType().getArrayJvmType( lv.getArrayDimension() ) );
@@ -129,9 +134,32 @@ public class MethodBuilder extends AdviceAdapter {
 			storeLocal( lv.getArrayPosition(), lv.getType().getJvmType() );
 		}
 		
-		debug( "## istore _"+lv.getArrayPosition() );
+		debug( "## store _"+lv.getArrayPosition() );
+	}
+	
+	public void storeInField( ModuleBuilder mb, String varName ) throws CompileException {
+		ClassField field = mb.getField(varName);
+		if ( field==null )
+			throw new CompileException("Class field "+varName+" used, but not defined.");
+		if ( field.getType() == JMBVariableType.FIXED_STRING ) {
+			invokeVirtual(Type.getType(String.class),
+			         Method.getMethod("char[] toCharArray()"));
+			push( (int) field.getFixedStringLength() );
+			invokeStatic(Type.getType(Arrays.class), Method.getMethod("char[] copyOf(char[], int)"));
+		} else if( field.getType() == JMBVariableType.STRING ) {
+			invokeVirtual(Type.getType(Object.class),
+			         Method.getMethod("String toString()"));				
+		}
+		loadThis();
+		swap();
+		if ( field.isArray() ) {
+			putField(Type.getObjectType(mb.getClassFullyQualifiedName()), varName, field.getType().getArrayJvmType( field.getArrayDimension() ));
+		}
+		else {
+			putField(Type.getObjectType(mb.getClassFullyQualifiedName()), varName, field.getType().getJvmType());
+		}
 		
-
+		debug( "## put field "+field.getName() );
 	}
 	
 	public void printStatement ( List<Object> objs ) {
@@ -156,10 +184,10 @@ public class MethodBuilder extends AdviceAdapter {
 								
 				loadLocal(lv.getArrayPosition(), lv.getType().getJvmType());
 				if ( lv.getType() == JMBVariableType.INTEGER ) {
-					invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf(int)"));
+					invokeVirtual(Type.getType(Long.class), Method.getMethod("String toString()"));
 				}
 				if ( lv.getType() == JMBVariableType.FLOAT ) {
-					invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf(float)"));
+					invokeVirtual(Type.getType(Double.class), Method.getMethod("String toString()"));
 				}
 				if ( lv.getType() == JMBVariableType.FIXED_STRING ) {
 					invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf(char[])"));
@@ -187,6 +215,7 @@ public class MethodBuilder extends AdviceAdapter {
 	}
 	
 	public LocalVariable getVariable( String varName ) throws CompileException {
+		debug(" getVariable():"+varName+" "+this);
 		LocalVariable lv = localVars.get(varName);
 		if ( lv==null )
 			throw new CompileException("Local variable "+varName+" used, but not defined.");
@@ -194,7 +223,16 @@ public class MethodBuilder extends AdviceAdapter {
 		return lv;
 	}
 	
+	public boolean isLocalVariableDefined ( String varName ) {
+		LocalVariable lv = localVars.get(varName);
+		if ( lv != null ) {
+			return true;
+		}
+		return false;
+	}
+	
 	private void debug( String str ) {
 		System.out.println( str );
 	}
+
 }

@@ -54,7 +54,10 @@ adhocModuleMemberDeclaration
 	:	fieldDeclaration
 	|	recordTypeDeclaration
 	|	procedureDeclaration
+	|	procedureCall
+//	|	expression
 //	|	statement
+	|	';'
 ;
 
 moduleMemberDeclaration
@@ -65,7 +68,7 @@ moduleMemberDeclaration
 ;
 
 //////////////////////////////////////////////////////////////////////
-//////////////   FUNCTION  AND STATEMENT
+//////////////   FUNCTION  AND STATEMENT  DECLARATIONS
 
 functionDeclaration
     :   DECLARE PUBLIC? NATIVE? FUNCTION Identifier functionFormalParameters returnType?
@@ -99,7 +102,7 @@ procedureDeclaration
 ;
 
 procedureFormalParameters
-    :   '(' procedureFormalParameterList? ')'
+    :   procedureFormalParameterList?
     ;
 
 procedureFormalParameterList
@@ -149,6 +152,24 @@ block
 
 blockStatement
     :   fieldDeclaration
+    |	callInternalProcedure
+    |	assignmentExpression ';'
+    |	';'
+;
+
+///////////////////////////////////////////////////////////////////////////////////
+//////////////   PROCEDURE CALLS
+
+procedureCall
+	:	'CALL' expressionName procedureRealParameterList?
+;
+
+procedureRealParameterList
+	:	procedureRealParameter (noiseWord procedureRealParameter)*
+;
+
+procedureRealParameter
+	:	expression
 ;
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -206,10 +227,45 @@ expression
 	:	builtinFunctionCall
 	|	primary
 //	|	assignmentExpression
+	|	functionInvocation
 //	|	expression '.' Identifier
 //	|	expression '(' expressionList? ')'
 ;
 
+assignmentExpression
+	:	 assignment
+//	|	conditionalExpression
+	;
+
+assignment
+	:	leftHandSide ASSIGN expression
+;
+
+leftHandSide
+	:	 fieldAccess
+//	|	expressionName
+//	|	arrayAccess
+	;
+
+fieldAccess
+	:	variableIdentifier
+//	:	primary '.' Identifier
+;
+
+////////////////////////////////////////////////////////////////////////////////////
+////////////   FUNCTION INVOCATION
+
+functionInvocation
+	: functionName '(' argumentList? ')'
+;
+
+argumentList
+	:	expression (',' expression)*
+;
+
+functionName
+	:	expressionName
+;
 
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////   TYPES
@@ -312,7 +368,7 @@ expressionStatement
 ;
 
 statementExpression
-	:	printStatement
+	:	callInternalProcedure
 //	:	assignment
 //	|	preIncrementExpression
 //	|	preDecrementExpression
@@ -323,14 +379,17 @@ statementExpression
 ;
 
 
-
 ////////////////////////////////////////////////////////////////////////////////////
 ///////////       BUILTIN FUNCTIONS & STATEMENTS
 
 // STATEMENTS
 
+callInternalProcedure
+	:	printStatement
+;
+
 printStatement
-	:	PRINT concatStrings+
+	:	PRINT concatStrings+ ';'
 ;
 
 // FUNCTIONS
@@ -492,7 +551,7 @@ LT : '<';
 BANG : '!';
 TILDE : '~';
 QUESTION : '?';
-COLON : ':';
+//COLON : ':';
 EQUAL : '==';
 LE : '<=';
 GE : '>=';
@@ -511,18 +570,6 @@ CARET : '^';
 MOD : '%';
 ARROW : '->';
 COLONCOLON : '::';
-
-ADD_ASSIGN : '+=';
-SUB_ASSIGN : '-=';
-MUL_ASSIGN : '*=';
-DIV_ASSIGN : '/=';
-AND_ASSIGN : '&=';
-OR_ASSIGN : '|=';
-XOR_ASSIGN : '^=';
-MOD_ASSIGN : '%=';
-LSHIFT_ASSIGN : '<<=';
-RSHIFT_ASSIGN : '>>=';
-URSHIFT_ASSIGN : '>>>=';
 
 // identifiers
 
