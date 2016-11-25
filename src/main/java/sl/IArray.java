@@ -29,7 +29,7 @@ public interface IArray {
 	public abstract Object[] append(Object... args);
 
 	/**
-	 * <code><b><i>SL_ARRAY.Delete</i></b></code> - Function (procedure) that inserts an element into an array
+	 * <code><b><i>SL_ARRAY.Delete</i></b></code> - Function (procedure) that deletes an element from an array
 	 * @param args (array, index)
 	 * 				</br>The <code><b><i>array</i></b></code> parameter is the array to delete the element from.
 	 * 				</br>The <code><b><i>index</i></b></code> parameter is the position of the element to delete. It can be any integer >= 1.
