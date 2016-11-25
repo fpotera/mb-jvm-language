@@ -195,6 +195,17 @@ public class TestStageOfDevelopment {
 			}
 		}
 		System.out.println();
+		
+		Integer[] arrayDelete = { 1, 2, 3, 4, 5 };
+		result = (Object[]) testArray.delete(arrayDelete, 2);
+		for (int i = 0; i < result.length; i++) {
+			if (i < result.length - 1) {
+				System.out.print(result[i] + ", ");
+			} else {
+				System.out.print(result[i]);
+			}
+		}
+		System.out.println();
 
 		java.lang.String version = (java.lang.String) testArray.version();
 		System.out.println("SL_ARRAY.Version() : " + version);

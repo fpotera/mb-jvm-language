@@ -85,21 +85,14 @@ public class Array implements IArray {
 
 	@Override
 	public Object[] delete(Object... args) {
-		/*Long index = Long.parseLong(java.lang.String.valueOf(args[1]));
+		Long index = Long.parseLong(java.lang.String.valueOf(args[1]));
 		int arrayLength = java.lang.reflect.Array.getLength(args[0]);
 		List<? super Object> newArray = new ArrayList<>(arrayLength);
 		for (int i = 0; i < arrayLength; i++) {
 			newArray.add(java.lang.reflect.Array.get(args[0], i));
 		}
-		if (index.intValue() <= 0) {
-			newArray.add(0, element);
-		} else if (index.intValue() <= newArray.size()) {
-			newArray.add(index.intValue() - 1, element);
-		} else {
-			newArray.add(element);
-		}
-		return newArray.toArray();*/
-		return null;
+		newArray.remove(index.intValue() - 1);
+		return newArray.toArray();
 	}
 
 	@Override
