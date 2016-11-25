@@ -7,6 +7,13 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 
+import com.axway.jmb.ProcedureParameterIOType;
+import com.axway.jmb.annotations.ProcedureParameter;
+import com.axway.jmb.annotations.ProcedureParameters;
+import com.axway.jmb.annotations.FuncOrProcParameterType;
+import com.axway.jmb.annotations.ProcParameterNoiseWord;
+import com.axway.jmb.annotations.FuncOrProcParameterDefaultValue;
+
 import resources.ApplicationProperties;
 
 /**
@@ -148,9 +155,16 @@ public class String implements IString {
 	}
 
 	@Override
-	public Object reverse(Object... args) {
+	@ProcedureParameters({
+		@ProcedureParameter(paramIOType=ProcedureParameterIOType.INOUT,
+				paramType=@FuncOrProcParameterType(type = FuncOrProcParameterType.Type.PRIMITIVE),
+				defaulValue=@FuncOrProcParameterDefaultValue(FuncOrProcParameterDefaultValue.Value.NONE),
+				noiseWord=@ProcParameterNoiseWord(ProcParameterNoiseWord.Word.DEFAULT))
+	})
+	public Object[] reverse(Object... args) {
 		StringBuilder result = new StringBuilder((java.lang.String) args[0]);
-		return result.reverse().toString();
+		
+		return new Object[] { result.reverse().toString() };
 	}
 
 	@Override

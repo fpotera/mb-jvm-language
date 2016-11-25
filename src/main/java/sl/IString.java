@@ -80,7 +80,7 @@ public interface IString {
 	 * 				</br>The <code><b><i>string</i></b></code> parameter is the string to be reversed.
 	 * @return the reversed string.
 	 */
-	public abstract Object reverse(Object... args);
+	public abstract Object[] reverse(Object... args);
 
 	/**
 	 * Function that converts all uppercase letters from a string to lowercase

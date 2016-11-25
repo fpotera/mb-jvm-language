@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.AdviceAdapter;
 import org.objectweb.asm.commons.Method;
@@ -112,10 +113,17 @@ public class MethodBuilder extends AdviceAdapter {
 		}			
 	}
 	
-	public void storeInLocalVar( String varName ) throws CompileException {
+	public void storeInLocalVar( String varName, boolean isStatementCall, int statementCallCurrentParameterIndex ) throws CompileException {
 		LocalVariable lv = localVars.get(varName);
 		if ( lv==null )
 			throw new CompileException("Local variable "+varName+" used, but not defined.");
+
+		if ( isStatementCall ) {
+			visitInsn(Opcodes.DUP);
+			visitInsn(Opcodes.ICONST_0+statementCallCurrentParameterIndex);
+			visitInsn(AALOAD);
+		}
+		
 		if ( lv.getType() == JMBVariableType.FIXED_STRING ) {
 			invokeVirtual(Type.getType(String.class),
 			         Method.getMethod("char[] toCharArray()"));
@@ -141,10 +149,60 @@ public class MethodBuilder extends AdviceAdapter {
 		debug( "## store _"+lv.getArrayPosition() );
 	}
 	
-	public void storeInField(ModuleBuilder mb, String varName) throws CompileException {
+	public void loadFromLocalVar( String varName, boolean isStatementCall, int statementCallCurrentParameterIndex ) throws CompileException {
+		LocalVariable lv = localVars.get(varName);
+		if ( lv==null )
+			throw new CompileException("Local variable "+varName+" used, but not defined.");
+		
+		if ( isStatementCall ) {
+			visitInsn(Opcodes.DUP);
+			visitInsn(Opcodes.ICONST_0+statementCallCurrentParameterIndex);			
+		}
+		
+		if ( lv.isArray() ) {
+			loadLocal( lv.getArrayPosition(), lv.getType().getArrayJvmType( lv.getArrayDimension() ) );
+		}
+		else {
+			loadLocal( lv.getArrayPosition(), lv.getType().getJvmType() );
+		}
+		
+		if ( isStatementCall ) {
+			visitInsn(Opcodes.AASTORE);
+		}
+	}
+	
+	public void loadFromField ( ModuleBuilder mb, String varName, boolean isStatementCall, int statementCallCurrentParameterIndex ) throws CompileException {
 		ClassField field = mb.getField(varName);
 		if (field == null)
 			throw new CompileException("Class field " + varName + " used, but not defined.");
+		
+		if ( isStatementCall ) {
+			visitInsn(Opcodes.DUP);
+			visitInsn(Opcodes.ICONST_0+statementCallCurrentParameterIndex);			
+		}		
+		
+		if (field.isArray()) {
+			getField(Type.getObjectType(mb.getClassFullyQualifiedName()), varName, field.getType().getArrayJvmType(field.getArrayDimension()));
+		} else {
+			getField(Type.getObjectType(mb.getClassFullyQualifiedName()), varName, field.getType().getJvmType());
+		}
+		
+		if ( isStatementCall ) {
+			visitInsn(Opcodes.AASTORE);
+		}
+	}
+	
+	public void storeInField(ModuleBuilder mb, String varName, boolean isStatementCall, int statementCallCurrentParameterIndex) throws CompileException {
+		ClassField field = mb.getField(varName);
+		if (field == null)
+			throw new CompileException("Class field " + varName + " used, but not defined.");
+		
+		if ( isStatementCall ) {
+			visitInsn(Opcodes.DUP);
+			visitInsn(Opcodes.ICONST_0+statementCallCurrentParameterIndex);
+			visitInsn(AALOAD);
+		}		
+		
 		if (field.getType() == JMBVariableType.FIXED_STRING) {
 			invokeVirtual(Type.getType(String.class), Method.getMethod("char[] toCharArray()"));
 			push((int) field.getFixedStringLength());
