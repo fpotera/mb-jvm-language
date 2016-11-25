@@ -11,12 +11,17 @@ import java.util.Map;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.util.CheckMethodAdapter;
 
+import com.axway.jmb.CompileException;
 import com.axway.jmb.MethodBuilder;
+import com.axway.jmb.Reflections;
 import com.axway.jmb.Utils;
+import com.axway.jmb.annotations.ProcedureParameter;
+import com.axway.jmb.annotations.ProcedureParameters;
 
 /**
  * Bytecode generator for java class methods.
@@ -37,16 +42,24 @@ public class Methods {
 		return new MethodBuilder( ASM5, mv, accessType, Utils.getJavaMethodName(messageBuilderStatementName), "()V" );				
 	}
 	
-	public static void callLocalProcedureFromMainMethod(MethodBuilder mainMethod, Type currentClass, Method getInstanceMethod, Method procedureMethod) {
-		debug("callLocalProcedureFromMainMethod()");
+	public static void callLocalProcedure(MethodBuilder mainMethod, Type currentClass, Method getInstanceMethod, Method procedureMethod) {
+		debug("callLocalProcedure()");
 		mainMethod.invokeStatic(currentClass, getInstanceMethod);
 		mainMethod.invokeVirtual(currentClass, procedureMethod);
 	}
-
-	public static void callRemoteProcedureFromMainMethod(MethodBuilder mainMethod, String moduleName,
-			String procedureName) {
-		// TODO Auto-generated method stub
-		
+	
+	public static void beginProcedureCall( MethodBuilder method, Type clazz, Method getInstanceMethod, int arraySize) {
+		method.invokeStatic(clazz, getInstanceMethod);
+		method.visitInsn(Opcodes.ICONST_0+arraySize);
+		method.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
+	}
+	
+	public static void doProcedureCall( MethodBuilder method, Type clazz, Method procedureMethod ) {
+		method.invokeVirtual(clazz, procedureMethod);
+	}
+	
+	public static void endProcedureCall( MethodBuilder method ) {
+		method.visitInsn(Opcodes.POP);
 	}
 	
 	private static void debug ( String str ) {

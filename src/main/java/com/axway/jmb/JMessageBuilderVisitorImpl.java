@@ -37,11 +37,15 @@ import com.axway.jmb.JMessageBuilderParser.PrimaryContext;
 import com.axway.jmb.JMessageBuilderParser.PrintStatementContext;
 import com.axway.jmb.JMessageBuilderParser.ProcedureCallContext;
 import com.axway.jmb.JMessageBuilderParser.ProcedureDeclarationContext;
+import com.axway.jmb.JMessageBuilderParser.ProcedureRealParameterContext;
 import com.axway.jmb.JMessageBuilderParser.RecordFieldContext;
 import com.axway.jmb.JMessageBuilderParser.RecordTypeDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.SingleTypeIncludeDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.StringLiteralContext;
 import com.axway.jmb.JMessageBuilderParser.UnannTypeContext;
+import com.axway.jmb.annotations.ProcedureParameter;
+import com.axway.jmb.annotations.ProcedureParameters;
+import com.axway.jmb.annotations.ProcParameterNoiseWord;
 import com.axway.jmb.builders.Methods;
 import com.axway.jmb.builtin.Builtin;
 
@@ -298,7 +302,7 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 
 	@Override
 	public Void visitProcedureCall(ProcedureCallContext ctx) {		
-		super.visitProcedureCall(ctx);
+//		super.visitProcedureCall(ctx);
 		debug("visitProcedureCall():"+currentModule.getClassFullyQualifiedName());
 		String procedureCall = ctx.expressionName().getText();
 		String procedureName = procedureCall;
@@ -308,19 +312,33 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 			moduleName = procedureCall.split("\\.")[0];
 			procedureName = procedureCall.split("\\.")[1];
 		}
-		if ( currentMethod == null ) {
-			if ( moduleName.equals("") ) {
-				Type classType = Type.getObjectType( Utils.getInternalFQClassName(currentModule.getClassFullyQualifiedName()) );
-				Methods.callLocalProcedureFromMainMethod( mainMethod, classType,
-						new Method("getModule", classType, new Type[0]),
-						new Method(Utils.getJavaMethodName(procedureName), Type.VOID_TYPE, new Type[0]));
+		
+		try {
+			if ( currentMethod == null ) {
+				if ( moduleName.equals("") ) {
+					Type classType = Type.getObjectType( Utils.getInternalFQClassName(currentModule.getClassFullyQualifiedName()) );
+					Methods.callLocalProcedure( mainMethod, classType,
+							new Method("getModule", classType, new Type[0]),
+							new Method(Utils.getJavaMethodName(procedureName), Type.VOID_TYPE, new Type[0]));
+				}
+				else {
+					callRemoteProcedure(moduleName, procedureName, ctx);
+				}
 			}
 			else {
-				Methods.callRemoteProcedureFromMainMethod( mainMethod, moduleName, procedureName );
+				if ( moduleName.equals("") ) {
+					Type classType = Type.getObjectType( Utils.getInternalFQClassName(currentModule.getClassFullyQualifiedName()) );
+					Methods.callLocalProcedure( currentMethod, classType,
+							new Method("getModule", classType, new Type[0]),
+							new Method(Utils.getJavaMethodName(procedureName), Type.VOID_TYPE, new Type[0]));
+				}
+				else {
+					callRemoteProcedure(moduleName, procedureName, ctx);
+				}			
 			}
-		}
-		else {
-			
+		} catch (CompileException e) {
+			e.printStackTrace();
+			System.exit(1);
 		}
 	
 		return null;
@@ -377,10 +395,10 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 			String varName = convertVariableName ( ctx.leftHandSide().getText() );
 			if ( currentMethod != null ) {
 				if ( currentMethod.isLocalVariableDefined( varName ) ) {
-					currentMethod.storeInLocalVar( varName );
+					currentMethod.storeInLocalVar( varName, false, 0 );
 				}
 				else if ( currentModule.isFieldDefined(varName) ) {
-					currentMethod.storeInField( currentModule, varName );
+					currentMethod.storeInField( currentModule, varName, false, 0 );
 				}
 				else {
 					throw new CompileException("Variable "+varName+" used, but not defined.");
@@ -388,10 +406,10 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 			}
 			else {
 				if ( currentConstructor.isLocalVariableDefined( varName ) ) {
-					currentConstructor.storeInLocalVar( varName );
+					currentConstructor.storeInLocalVar( varName, false, 0 );
 				}
 				else if ( currentModule.isFieldDefined(varName) ) {
-					currentConstructor.storeInField( currentModule, varName );
+					currentConstructor.storeInField( currentModule, varName, false, 0 );
 				}
 				else {
 					throw new CompileException("Variable "+varName+" used, but not defined.");
@@ -586,4 +604,121 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 			statementCallCurrentParameterIndex++;
 		}			
 	}
+	
+	private void callRemoteProcedure ( String moduleName, String procedureName, ProcedureCallContext ctx ) throws CompileException {
+		debug("callRemoteProcedure():"+moduleName+"."+procedureName);
+		String moduleAsJavaClass = Utils.getJavaFullyQualifiedClassName( moduleName );
+		String procName = Utils.getJavaMethodName( procedureName );
+		
+		ProcedureParameters params = (ProcedureParameters) Reflections.getAnnotationOfMethod(moduleAsJavaClass, procName, ProcedureParameters.class);
+		if ( params == null ) {
+			throw new CompileException("Call remote statement "+moduleName+"."+procedureName+"  doesn't have defined necesary annotations.");
+		}
+		
+		Type moduleType = Utils.getJavaFullyQualifiedClassType( moduleName );
+		Method getModuleMethod = new Method("getModule", moduleType, new Type[0]);
+		Method calledProcedure = new Method(Utils.getJavaMethodName(procName), Type.getObjectType("[Ljava/lang/Object;"), new Type[]{Type.getObjectType("[Ljava/lang/Object;")});
+		
+		int arraySizeIn = 0;
+		int arraySizeOut = 0;
+		for ( ProcedureParameter param : params.value() ) {
+			if ( param.paramIOType() == ProcedureParameterIOType.IN ||
+					param.paramIOType() == ProcedureParameterIOType.INOUT ) {
+				arraySizeIn++;
+			}
+			if ( param.paramIOType() == ProcedureParameterIOType.OUT ||
+					param.paramIOType() == ProcedureParameterIOType.INOUT ) {
+				arraySizeOut++;
+			}
+		}
+		MethodBuilder crtMet = currentMethod!=null?currentMethod:currentConstructor;
+		Methods.beginProcedureCall(crtMet, moduleType, getModuleMethod, arraySizeIn);
+
+		int indexInParams = 0;
+		boolean workWithNoiseWords = false;
+		int indexInValues = 0;
+		int indexOfInParametersInCallArray = 0;
+		// cycle for input before method call
+		for ( ProcedureParameter param : params.value() ) {
+			if ( param.paramIOType() == ProcedureParameterIOType.IN ||
+					param.paramIOType() == ProcedureParameterIOType.INOUT ) {
+				if ( indexInParams == 1 && param.noiseWord().value() == ProcParameterNoiseWord.Word.DEFINED ) {
+					workWithNoiseWords = true;
+				}
+				if ( !workWithNoiseWords ) {
+					if (ctx.procedureRealParameterList() != null) {
+						ProcedureRealParameterContext rp = ctx.procedureRealParameterList().procedureRealParameter().get( indexInValues );
+						if ( param.paramIOType() == ProcedureParameterIOType.INOUT && rp.expression().primary().variableIdentifier() == null ) {
+							throw new CompileException("Call remote statement "+moduleName+"."+procedureName+"  with OUT parameter " + indexInParams + " as a primitive and not as a variable.");
+						}
+						// put reference on stack
+						String varName = convertVariableName( rp.expression().primary().variableIdentifier().getText() );
+						debug("AICI!!!!");
+						varName = "y";
+						if ( crtMet.isLocalVariableDefined(varName) ) {
+							crtMet.loadFromLocalVar( varName, true, indexOfInParametersInCallArray );
+						}
+						else {
+							crtMet.loadFromField( currentModule, varName, true, indexOfInParametersInCallArray );
+						}
+						indexOfInParametersInCallArray++;
+					}
+					else {
+					}
+				}
+				else {
+					
+				}
+			}
+
+			indexInParams++;
+			indexInValues++;
+		}
+		
+		Methods.doProcedureCall(crtMet, moduleType, calledProcedure);
+		
+		indexInParams = 0;
+		workWithNoiseWords = false;
+		indexInValues = 0;
+		int indexOfInParametersInResultsArray = 0;
+		// cycle for output after method call
+		for ( ProcedureParameter param : params.value() ) {
+			if ( param.paramIOType() == ProcedureParameterIOType.OUT ||
+					param.paramIOType() == ProcedureParameterIOType.INOUT ) {
+				if ( indexInParams == 1 && param.noiseWord().value() == ProcParameterNoiseWord.Word.DEFINED ) {
+					workWithNoiseWords = true;
+				}				
+				if ( !workWithNoiseWords ) {
+					if (ctx.procedureRealParameterList() != null) {
+						ProcedureRealParameterContext rp = ctx.procedureRealParameterList().procedureRealParameter().get( indexInValues );
+						// get reference on stack
+						String varName = convertVariableName( rp.expression().primary().variableIdentifier().getText() );
+						debug("ACOLO!!!!");
+						varName = "y";						
+						if ( crtMet.isLocalVariableDefined(varName) ) {
+							crtMet.storeInLocalVar( varName, true, indexOfInParametersInResultsArray );
+						}
+						else {
+							crtMet.storeInField( currentModule, varName, true, indexOfInParametersInResultsArray );
+						}
+						indexOfInParametersInResultsArray++;						
+
+					}
+				}
+
+			
+			}
+			
+		}
+		
+		Methods.endProcedureCall(crtMet);
+	}
 }
+
+
+
+
+
+
+
+

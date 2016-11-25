@@ -68,7 +68,7 @@ moduleMemberDeclaration
 ;
 
 //////////////////////////////////////////////////////////////////////
-//////////////   FUNCTION  AND STATEMENT  DECLARATIONS
+//////////////   FUNCTION  AND STATEMENT ( PROCEDURE )  DECLARATIONS
 
 functionDeclaration
     :   DECLARE PUBLIC? NATIVE? FUNCTION Identifier functionFormalParameters returnType?
@@ -153,6 +153,7 @@ block
 blockStatement
     :   fieldDeclaration
     |	callInternalProcedure
+    |	procedureCall ';'
     |	assignmentExpression ';'
     |	';'
 ;

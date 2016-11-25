@@ -50,7 +50,7 @@ public class TestStageOfDevelopment {
 		java.lang.String elements = (java.lang.String) testString.fieldimplode(new java.lang.String[] { "field A", "field B", "field C", "field D" }, ":");
 		System.out.println("Elements : " + elements);
 
-		java.lang.String reversedString = (java.lang.String) testString.reverse("reverse it");
+		java.lang.String reversedString = (java.lang.String) testString.reverse("reverse it")[0];
 		System.out.println("Reversed String : " + reversedString);
 
 		java.lang.String convertedStringToLower = (java.lang.String) testString.tolower("STANDARD LIBRARY");
