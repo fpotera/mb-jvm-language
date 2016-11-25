@@ -149,11 +149,9 @@ public class TestStageOfDevelopment {
 	public static void test_SL_DATE_Module() {
 		IDate testDate = Date.getModule();
 
-//		java.lang.String stringToConvert = "2000.01.13";
-		java.lang.String stringToConvert = "2000-01-13";
-		java.lang.String format = "yyyy-MM-dd";
+		java.lang.String stringToConvert = "2016.11.25 11.30 PM";
+		java.lang.String format = "%Y.%m.%d %I.%M %p";
 //		java.lang.String format = "%Y.%m.%d";
-//		java.lang.String stringDate = (java.lang.String) testDate.stringtodate(stringToConvert, format);
 		java.util.Date stringDate = (java.util.Date) testDate.stringtodate(stringToConvert, format);
 		System.out.println("SL_DATE.StringToDate(\"" + stringToConvert + "\", \"" + format + "\") : " + stringDate);
 
@@ -185,9 +183,22 @@ public class TestStageOfDevelopment {
 			}
 		}
 		System.out.println();
+		
+		Long[] arrayAppend = { 1L, 2L, 3L, 4L };
+		Long valueAppend = 5L;
+		result = (Object[]) testArray.append(arrayAppend, valueAppend);
+		for (int i = 0; i < result.length; i++) {
+			if (i < result.length - 1) {
+				System.out.print(result[i] + ", ");
+			} else {
+				System.out.print(result[i]);
+			}
+		}
+		System.out.println();
 
 		java.lang.String version = (java.lang.String) testArray.version();
 		System.out.println("SL_ARRAY.Version() : " + version);
+		
 	}
 
 }

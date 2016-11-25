@@ -7,6 +7,7 @@ package com.axway.jmb;
 
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -129,6 +130,8 @@ public class MethodBuilder extends AdviceAdapter {
 			visitTypeInsn(CHECKCAST, "java/lang/Long");
 		} else if (lv.getType() == JMBVariableType.FLOAT) {
 			visitTypeInsn(CHECKCAST, "java/lang/Double");
+		} else if (lv.getType() == JMBVariableType.DATE) {
+			visitTypeInsn(CHECKCAST, "java/util/Date");
 		}
 
 		if ( lv.isArray() ) {
@@ -155,6 +158,8 @@ public class MethodBuilder extends AdviceAdapter {
 			visitTypeInsn(CHECKCAST, "java/lang/Long");
 		} else if (field.getType() == JMBVariableType.FLOAT) {
 			visitTypeInsn(CHECKCAST, "java/lang/Double");
+		} else if (field.getType() == JMBVariableType.DATE) {
+			visitTypeInsn(CHECKCAST, "java/util/Date");
 		}
 		loadThis();
 		swap();
@@ -196,6 +201,9 @@ public class MethodBuilder extends AdviceAdapter {
 				}
 				if ( lv.getType() == JMBVariableType.FIXED_STRING ) {
 					invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf(char[])"));
+				}
+				if ( lv.getType() == JMBVariableType.DATE) {
+					invokeVirtual(Type.getType(Date.class), Method.getMethod("String toString()"));
 				}
 				invokeVirtual(Type.getType(String.class),
 				         Method.getMethod("String concat(String)"));				

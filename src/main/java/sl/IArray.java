@@ -19,8 +19,23 @@ public interface IArray {
 	 */
 	public abstract Object[] insert(Object... args);
 
+	/**
+	 * <code><b><i>SL_ARRAY.Append</i></b></code> - Function (procedure) that appends an element to the end of an array
+	 * @param args (array, element)
+	 * 				</br>The <code><b><i>array</i></b></code> parameter is the array to append the <code><b><i>element</i></b></code> to.
+	 * 				</br>The <code><b><i>element</i></b></code> parameter is the element to append. It should be of the same type as the elements of array.
+	 * @return the modified array.
+	 */
 	public abstract Object[] append(Object... args);
 
+	/**
+	 * <code><b><i>SL_ARRAY.Delete</i></b></code> - Function (procedure) that inserts an element into an array
+	 * @param args (array, index)
+	 * 				</br>The <code><b><i>array</i></b></code> parameter is the array to delete the element from.
+	 * 				</br>The <code><b><i>index</i></b></code> parameter is the position of the element to delete. It can be any integer >= 1.
+	 * 				</br>&emsp;<code>All elements that have an <b><i>index</i></b> greater than index are moved down one position, that is, their index is decremented by 1.</code>
+	 * @return the modified array.
+	 */
 	public abstract Object[] delete(Object... args);
 
 	/**
