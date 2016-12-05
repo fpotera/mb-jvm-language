@@ -176,6 +176,9 @@ public class TestStageOfDevelopment {
 		Double value = 5D;
 		Object[] result = (Object[]) testArray.insert(array, position, value);
 		for (int i = 0; i < result.length; i++) {
+			if (i == 0) {
+				System.out.print("SL_ARRAY.Insert : ");
+			}
 			if (i < result.length - 1) {
 				System.out.print(result[i] + ", ");
 			} else {
@@ -188,6 +191,23 @@ public class TestStageOfDevelopment {
 		Long valueAppend = 5L;
 		result = (Object[]) testArray.append(arrayAppend, valueAppend);
 		for (int i = 0; i < result.length; i++) {
+			if (i == 0) {
+				System.out.print("SL_ARRAY.Append : ");
+			}
+			if (i < result.length - 1) {
+				System.out.print(result[i] + ", ");
+			} else {
+				System.out.print(result[i]);
+			}
+		}
+		System.out.println();
+		
+		Integer[] arrayDelete = { 1, 2, 3, 4, 5 };
+		result = (Object[]) testArray.delete(arrayDelete, 2);
+		for (int i = 0; i < result.length; i++) {
+			if (i == 0) {
+				System.out.print("SL_ARRAY.Delete : ");
+			}
 			if (i < result.length - 1) {
 				System.out.print(result[i] + ", ");
 			} else {
