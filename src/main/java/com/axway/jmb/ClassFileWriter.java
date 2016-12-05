@@ -18,15 +18,14 @@ import java.io.OutputStream;
 
 public class ClassFileWriter {
 	
-	public static final String BASE_DIR = "target/classes";
+	public static final String DEFAULT_BASE_DIR = "target/classes";
 	
-	private String baseDir;
+	private static String baseDir = DEFAULT_BASE_DIR;
 	private String javaFullyQualifiedName;
 	private OutputStream stream;
 	
-	public ClassFileWriter(String baseDir, String javaFullyQualifiedName) {
+	public ClassFileWriter(String javaFullyQualifiedName) {
 		super();
-		this.baseDir = baseDir;
 		this.javaFullyQualifiedName = javaFullyQualifiedName;
 	}
 	
@@ -50,6 +49,10 @@ public class ClassFileWriter {
 	
 	public void close () throws IOException {
 		stream.close();
+	}
+
+	public static void setBaseDir(String baseDir) {
+		ClassFileWriter.baseDir = baseDir;
 	}
 	
 }

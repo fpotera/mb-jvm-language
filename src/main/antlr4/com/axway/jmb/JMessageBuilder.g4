@@ -7,8 +7,7 @@ grammar JMessageBuilder;
 
 }
 @members {
-	boolean isModule = false;
-	boolean isInterface = false;
+	boolean isString = false;
 }
 
 
@@ -35,7 +34,7 @@ typeDeclaration
 	;
 
 moduleDeclaration
-	: DECLARE MODULE INTERFACE? moduleIdentifier moduleBody { isModule = true; }
+	: DECLARE MODULE INTERFACE? moduleIdentifier moduleBody
 ;
 
 adhocModuleBodyDeclaration
@@ -474,6 +473,8 @@ Sign
 ;
 
 stringLiteral
+@init { isString = true; }
+@after { isString = false; }
 	:	'"' StringCharacters? '"'
 ;
 
@@ -570,31 +571,33 @@ BITOR : '|';
 CARET : '^';
 MOD : '%';
 ARROW : '->';
-COLONCOLON : '::';
+//COLONCOLON : '::';
 
 // identifiers
 
+DOLLAR : '$';
+
 recordIdentifier
-	:	MBLetterOrDigit+
+	:	LetterOrDigit+
 ;
 
 variableIdentifier
-	:	'$' MBLetterOrDigit+
+	:	DOLLAR LetterOrDigit+
 ;
 
 moduleIdentifier
-	:	MBLetterOrDigit+
+	:	LetterOrDigit+
 ;
 
 Identifier
-	:	MBLetter MBLetterOrDigit*
+	:	Letter LetterOrDigit*
 ;
 
-MBLetter
+Letter
 	:	[a-zA-Z_] // these are the "java letters" below 0x7F
 ;
 
-MBLetterOrDigit
+LetterOrDigit
 	:	[a-zA-Z0-9_] // these are the "java letters or digits" below 0x7F
 ;
 
@@ -602,7 +605,7 @@ MBLetterOrDigit
 // Whitespace and comments
 //
 
-WS  :  [ \t\r\n\u000C]+ -> skip
+WS  : {!isString}? [ \t\r\n\u000C]+  -> skip
 ;
 
 COMMENT

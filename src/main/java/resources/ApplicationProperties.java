@@ -10,7 +10,7 @@ import java.lang.String;
  */
 public class ApplicationProperties {
 
-	public static final String RESOURCES = ApplicationProperties.class.getPackage().getName() + ".application";
+	public static final String RESOURCES = "application";
 
 	private static ResourceBundle resources;
 

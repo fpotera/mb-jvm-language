@@ -5,6 +5,8 @@
 
 package com.axway.jmb;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -50,13 +52,35 @@ public class JMBCompiler {
 	}
 	
 	public static void main (String[] args) throws IOException {
-        String inputFile = null;
-        if ( args.length>0 ) inputFile = args[0];
-        InputStream is = System.in;
+		String destDir = ClassFileWriter.DEFAULT_BASE_DIR;
+		String inputFile = null;
+		for ( String arg : args ) {
+			if ( arg.startsWith("-d:") ) {
+				destDir = arg.substring(3);
+			}
+			else if ( arg.endsWith(".s4h") || arg.endsWith(".s4m") || arg.endsWith(".s4") ) {
+				inputFile = arg;
+			}
+		}
+		ClassFileWriter.setBaseDir(destDir);
+		
+        InputStream is = null;
         if ( inputFile!=null ) {
-        	ClassLoader classLoader = JMBCompiler.class.getClassLoader();
-        	is = classLoader.getResourceAsStream( inputFile );
-            //is = new FileInputStream(inputFile);
+        	try {
+        		is = new FileInputStream( inputFile );
+        	}
+        	catch ( FileNotFoundException ex ) {
+            	ClassLoader classLoader = JMBCompiler.class.getClassLoader();
+            	is = classLoader.getResourceAsStream( inputFile );        		
+        	}
+        }
+        else {
+        	System.err.println("No input file to compile.");
+        	System.exit(1);
+        }
+        if ( is == null ) {
+        	System.err.println("Input file to compile not found.");
+        	System.exit(1);        	
         }
 
         String pakage = Utils.getPackage( inputFile );
@@ -71,15 +95,15 @@ public class JMBCompiler {
  
         String javaFullyQualifiedClassName = pakage+"."+fileName;
         
-        ClassFileWriter cw = new  ClassFileWriter( ClassFileWriter.BASE_DIR, javaFullyQualifiedClassName);   
+        ClassFileWriter cw = new  ClassFileWriter( javaFullyQualifiedClassName);   
         cw.open();
         cw.write(clazz);
         cw.close();
         
-        System.out.println("Compiled!!!");
-        
-	
+        System.out.println("Compiled successfuly.");	
 	}
+	
+	
 
 }
 

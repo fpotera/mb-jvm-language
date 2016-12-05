@@ -125,27 +125,28 @@ public class MethodBuilder extends AdviceAdapter {
 			visitInsn(AALOAD);
 		}
 		
-		if ( lv.getType() == JMBVariableType.FIXED_STRING ) {
-			invokeVirtual(Type.getType(String.class),
-			         Method.getMethod("char[] toCharArray()"));
-			push( (int) lv.getFixedStringLength() );
-			invokeStatic(Type.getType(Arrays.class), Method.getMethod("char[] copyOf(char[], int)"));
-		}
-		else if ( lv.getType() == JMBVariableType.STRING ) {
-			invokeVirtual(Type.getType(Object.class),
-			         Method.getMethod("String toString()"));			
-		} else if (lv.getType() == JMBVariableType.INTEGER) {
-			visitTypeInsn(CHECKCAST, "java/lang/Long");
-		} else if (lv.getType() == JMBVariableType.FLOAT) {
-			visitTypeInsn(CHECKCAST, "java/lang/Double");
-		} else if (lv.getType() == JMBVariableType.DATE) {
-			visitTypeInsn(CHECKCAST, "java/util/Date");
-		}
-
 		if ( lv.isArray() ) {
+			visitTypeInsn(CHECKCAST, lv.getType().getArrayJvmType( lv.getArrayDimension()).toString() );
 			storeLocal( lv.getArrayPosition(), lv.getType().getArrayJvmType( lv.getArrayDimension() ) );
 		}
 		else {
+			if ( lv.getType() == JMBVariableType.FIXED_STRING ) {
+				invokeVirtual(Type.getType(String.class),
+				         Method.getMethod("char[] toCharArray()"));
+				push( (int) lv.getFixedStringLength() );
+				invokeStatic(Type.getType(Arrays.class), Method.getMethod("char[] copyOf(char[], int)"));
+			}
+			else if ( lv.getType() == JMBVariableType.STRING ) {
+				invokeVirtual(Type.getType(Object.class),
+				         Method.getMethod("String toString()"));			
+			} else if (lv.getType() == JMBVariableType.INTEGER) {
+				visitTypeInsn(CHECKCAST, "java/lang/Long");
+			} else if (lv.getType() == JMBVariableType.FLOAT) {
+				visitTypeInsn(CHECKCAST, "java/lang/Double");
+			} else if (lv.getType() == JMBVariableType.DATE) {
+				visitTypeInsn(CHECKCAST, "java/util/Date");
+			}			
+			
 			storeLocal( lv.getArrayPosition(), lv.getType().getJvmType() );
 		}
 		
@@ -250,18 +251,25 @@ public class MethodBuilder extends AdviceAdapter {
 					push( sb.toString() );
 				}
 								
-				loadLocal(lv.getArrayPosition(), lv.getType().getJvmType());
-				if ( lv.getType() == JMBVariableType.INTEGER ) {
-					invokeVirtual(Type.getType(Long.class), Method.getMethod("String toString()"));
+				if ( !lv.isArray() ) {
+					loadLocal(lv.getArrayPosition(), lv.getType().getJvmType());
+					if ( lv.getType() == JMBVariableType.INTEGER ) {
+						invokeVirtual(Type.getType(Long.class), Method.getMethod("String toString()"));
+					}
+					if ( lv.getType() == JMBVariableType.FLOAT ) {
+						invokeVirtual(Type.getType(Double.class), Method.getMethod("String toString()"));
+					}
+					if ( lv.getType() == JMBVariableType.FIXED_STRING ) {
+						invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf(char[])"));
+					}
+					if ( lv.getType() == JMBVariableType.DATE) {
+						invokeVirtual(Type.getType(Date.class), Method.getMethod("String toString()"));
+					}					
 				}
-				if ( lv.getType() == JMBVariableType.FLOAT ) {
-					invokeVirtual(Type.getType(Double.class), Method.getMethod("String toString()"));
-				}
-				if ( lv.getType() == JMBVariableType.FIXED_STRING ) {
-					invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf(char[])"));
-				}
-				if ( lv.getType() == JMBVariableType.DATE) {
-					invokeVirtual(Type.getType(Date.class), Method.getMethod("String toString()"));
+				else {
+					loadLocal(lv.getArrayPosition(), lv.getType().getArrayJvmType( lv.getArrayDimension() ));
+//					visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;");
+					invokeStatic(Type.getType(Arrays.class), Method.getMethod("String toString(Object[])"));
 				}
 				invokeVirtual(Type.getType(String.class),
 				         Method.getMethod("String concat(String)"));				

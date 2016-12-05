@@ -58,7 +58,7 @@ import com.axway.jmb.builtin.Builtin;
 public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void> {
 	private ModuleBuilder currentModule;
 	private MethodBuilder currentMethod;
-	private ConstructorBuilder currentConstructor;
+	private ConstructorBuilder currentConstructor; 
 	private MethodBuilder mainMethod;
 	private ClassWriter currentInnerClass;
 	private ClassWriter currentClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
@@ -241,7 +241,7 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		
 		String javaFullyQualifiedClassName = ((RecordClassBuilder)currentInnerClass).getRecordClassFullyQualifiedName();
 		
-        ClassFileWriter cw = new  ClassFileWriter( ClassFileWriter.BASE_DIR, javaFullyQualifiedClassName);   
+        ClassFileWriter cw = new  ClassFileWriter( javaFullyQualifiedClassName );   
         try {
 			cw.open();
 	        cw.write(currentInnerClass.toByteArray());
@@ -289,7 +289,7 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		super.visitProcedureDeclaration(ctx);
 		
 		currentMethod.returnValue();
-		currentMethod.visitMaxs(12, 2);	
+		currentMethod.visitMaxs(20, 2);	
 		currentMethod.visitEnd();
 
 		currentMethod = null;
@@ -653,7 +653,6 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 						}
 						// put reference on stack
 						String varName = convertVariableName( rp.expression().primary().variableIdentifier().getText() );
-						debug("AICI!!!!");
 						varName = "y";
 						if ( crtMet.isLocalVariableDefined(varName) ) {
 							crtMet.loadFromLocalVar( varName, true, indexOfInParametersInCallArray );
@@ -693,7 +692,6 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 						ProcedureRealParameterContext rp = ctx.procedureRealParameterList().procedureRealParameter().get( indexInValues );
 						// get reference on stack
 						String varName = convertVariableName( rp.expression().primary().variableIdentifier().getText() );
-						debug("ACOLO!!!!");
 						varName = "y";						
 						if ( crtMet.isLocalVariableDefined(varName) ) {
 							crtMet.storeInLocalVar( varName, true, indexOfInParametersInResultsArray );
