@@ -25,6 +25,7 @@ import org.objectweb.asm.commons.Method;
 import com.axway.jmb.JMessageBuilderParser.AdhocModuleBodyDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.AssignmentContext;
 import com.axway.jmb.JMessageBuilderParser.BuiltinFunctionCallContext;
+import com.axway.jmb.JMessageBuilderParser.CloseFileStatementContext;
 import com.axway.jmb.JMessageBuilderParser.CompilationUnitContext;
 import com.axway.jmb.JMessageBuilderParser.ConcatStringsContext;
 import com.axway.jmb.JMessageBuilderParser.FieldDeclarationContext;
@@ -33,11 +34,13 @@ import com.axway.jmb.JMessageBuilderParser.FunctionInvocationContext;
 import com.axway.jmb.JMessageBuilderParser.IntegerLiteralContext;
 import com.axway.jmb.JMessageBuilderParser.ModuleDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.ModuleIdentifierContext;
+import com.axway.jmb.JMessageBuilderParser.OpenFileStatementContext;
 import com.axway.jmb.JMessageBuilderParser.PrimaryContext;
 import com.axway.jmb.JMessageBuilderParser.PrintStatementContext;
 import com.axway.jmb.JMessageBuilderParser.ProcedureCallContext;
 import com.axway.jmb.JMessageBuilderParser.ProcedureDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.ProcedureRealParameterContext;
+import com.axway.jmb.JMessageBuilderParser.ReadStatementContext;
 import com.axway.jmb.JMessageBuilderParser.RecordFieldContext;
 import com.axway.jmb.JMessageBuilderParser.RecordTypeDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.SingleTypeIncludeDeclarationContext;
@@ -519,10 +522,72 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		return null;
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	//////   CALL BUILTIN OPEN FILE PROCEDURE	
+	
+	@Override
+	public Void visitOpenFileStatement(OpenFileStatementContext ctx) {
+		debug(" visitOpenFileStatement()");
+		super.visitOpenFileStatement(ctx);
+		
+		if ( currentMethod != null )  {
+			currentMethod.addCallToOpenFile( ctx.INPUT() != null );
+		}
+		else {
+			currentConstructor.addCallToOpenFile( ctx.INPUT() != null );
+		}
+		
+		return null;
+	}	
+
+	///////////////////////////////////////////////////////////////////////////////
+	//////   CALL BUILTIN CLOSE FILE PROCEDURE	
+
+	@Override
+	public Void visitCloseFileStatement(CloseFileStatementContext ctx) {
+		debug(" visitCloseFileStatement()");
+		super.visitCloseFileStatement(ctx);
+		
+		if ( currentMethod != null )  {
+			currentMethod.addCallToCloseFile( ctx.INPUT() != null );
+		}
+		else {
+			currentConstructor.addCallToCloseFile( ctx.INPUT() != null );
+		}		
+		
+		return null;
+	}	
+
+	///////////////////////////////////////////////////////////////////////////////
+	//////   CALL BUILTIN READ PROCEDURE		
+
+	@Override
+	public Void visitReadStatement(ReadStatementContext ctx) {
+		debug(" visitReadStatement()");
+		super.visitReadStatement(ctx);
+		
+		debug(" visitReadStatement()" + ctx.primary().literal() );
+		
+		try {
+			if ( currentMethod != null )  {
+				currentMethod.addCallToRead( currentModule, convertVariableName( ctx.variableIdentifier().getText()) );
+			}
+			else {
+				currentConstructor.addCallToRead( currentModule, convertVariableName( ctx.variableIdentifier().getText() ) );
+			}
+		}
+		catch (CompileException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
+		return null;
+	}	
+	
 	private void debug ( String str ) {
 		System.out.println( str );
 	}
-	
+
 	private String convertVariableName ( String varName ) {
 		return varName.substring(1).toLowerCase();
 	}
