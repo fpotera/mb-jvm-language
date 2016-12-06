@@ -2,16 +2,9 @@ package sl;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Map.Entry;
 
-import sl.Argument;
-import sl.Array;
-import sl.Char;
-import sl.Date;
-import sl.IArgument;
-import sl.IArray;
-import sl.IChar;
-import sl.IDate;
-import sl.String;
 import sl.IFile.FileInfo;
 
 public class TestStageOfDevelopment {
@@ -27,7 +20,9 @@ public class TestStageOfDevelopment {
 //		test_SL_CHAR_Module();
 //		test_SL_DATE_Module();
 //		test_SL_ARRAY_Module();
-		test_SL_FILE_Module();
+//		test_SL_FILE_Module();
+//		test_SL_HASH_Module();
+		test_SL_PATH_Module();
 	}
 	
 	public static void test_SL_STRING_Module() {
@@ -240,6 +235,60 @@ public class TestStageOfDevelopment {
 
 		java.lang.String version = (java.lang.String) testFile.version();
 		System.out.println("SL_FILE.Version() : " + version);
+	}
+
+	public static void test_SL_HASH_Module() {
+		IHash testFile = Hash.getModule();
+
+		Hashtable<java.lang.String, java.lang.String> map = (Hashtable<java.lang.String, java.lang.String>) testFile.initialize();
+
+		System.out.println("====================================================================================================");
+
+		testFile.put(map, "Name", "Donald Duck");
+		testFile.put(map, "Mother's Name", "Hortense McDuck");
+
+		System.out.println("====================================================================================================");
+
+		java.lang.String name = (java.lang.String) testFile.get(map, "Name");
+		java.lang.String motherName = (java.lang.String) testFile.get(map, "Mother's Name");
+		
+		System.out.println(name);
+		System.out.println(motherName);
+
+		for (Entry<java.lang.String, java.lang.String> entry : map.entrySet()) {
+			java.lang.String key = entry.getKey();
+			java.lang.String value = entry.getValue();
+			System.out.println(key + " -> " + value);
+		}
+
+		System.out.println("====================================================================================================");
+
+		java.lang.String version = (java.lang.String) testFile.version();
+		System.out.println("SL_HASH.Version() : " + version);
+	}
+
+	public static void test_SL_PATH_Module() {
+		IPath testFile = Path.getModule();
+		
+		java.lang.String path = "abc/xyz/../rst/./file";
+		System.out.println(testFile.filter(path));
+
+		System.out.println("====================================================================================================");
+
+		java.lang.String path1 = "abc/file";
+		java.lang.String path2 = "ABC/FILE";
+		System.out.println(testFile.compare(path1, path2) + " : path1.equals(path2) is \"" + ((Long) testFile.compare(path1, path2)).equals(Long.valueOf(1L)) + "\"");
+
+		System.out.println("====================================================================================================");
+
+		java.lang.String path3 = "abc/xyz/../file";
+		java.lang.String path4 = "abc/file";
+		System.out.println(testFile.comparefilter(path3, path4) + " : path3.equals(path4) is \"" + ((Long) testFile.comparefilter(path3, path4)).equals(Long.valueOf(1L)) + "\"");
+
+		System.out.println("====================================================================================================");
+
+		java.lang.String version = (java.lang.String) testFile.version();
+		System.out.println("SL_PATH.Version() : " + version);
 	}
 
 }

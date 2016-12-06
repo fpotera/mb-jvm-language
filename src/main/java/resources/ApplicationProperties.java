@@ -69,6 +69,22 @@ public class ApplicationProperties {
 	}
 
 	/**
+	 * The version number of the SL_HASH module
+	 */
+	public static String getSL_HASHversion() {
+		String sl_hash_Version = ApplicationProperties.getResource("sl_hash_version");
+		return sl_hash_Version;
+	}
+
+	/**
+	 * The version number of the SL_PATH module
+	 */
+	public static String getSL_PATHversion() {
+		String sl_path_Version = ApplicationProperties.getResource("sl_path_version");
+		return sl_path_Version;
+	}
+
+	/**
 	 * The version number of the SL_STRING module
 	 */
 	public static String getSL_STRINGversion() {
