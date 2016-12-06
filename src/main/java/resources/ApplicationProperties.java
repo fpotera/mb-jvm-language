@@ -29,19 +29,19 @@ public class ApplicationProperties {
 	}
 
 	/**
-	 * The version number of the SL_STRING module
-	 */
-	public static String getSL_STRINGversion() {
-		String sl_string_Version = ApplicationProperties.getResource("sl_string_version");
-		return sl_string_Version;
-	}
-
-	/**
 	 * The version number of the SL_ARGUMENT module
 	 */
 	public static String getSL_ARGUMENTversion() {
 		String sl_argument_Version = ApplicationProperties.getResource("sl_argument_version");
 		return sl_argument_Version;
+	}
+
+	/**
+	 * The version number of the SL_ARRAY module
+	 */
+	public static String getSL_ARRAYversion() {
+		String sl_array_Version = ApplicationProperties.getResource("sl_array_version");
+		return sl_array_Version;
 	}
 
 	/**
@@ -61,11 +61,19 @@ public class ApplicationProperties {
 	}
 
 	/**
-	 * The version number of the SL_ARRAY module
+	 * The version number of the SL_FILE module
 	 */
-	public static String getSL_ARRAYversion() {
-		String sl_array_Version = ApplicationProperties.getResource("sl_array_version");
-		return sl_array_Version;
+	public static String getSL_FILEversion() {
+		String sl_file_Version = ApplicationProperties.getResource("sl_file_version");
+		return sl_file_Version;
+	}
+
+	/**
+	 * The version number of the SL_STRING module
+	 */
+	public static String getSL_STRINGversion() {
+		String sl_string_Version = ApplicationProperties.getResource("sl_string_version");
+		return sl_string_Version;
 	}
 
 }
