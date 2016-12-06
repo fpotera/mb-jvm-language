@@ -386,20 +386,35 @@ statementExpression
 
 callInternalProcedure
 	:	printStatement
+	|	openFileStatement
+	|	closeFileStatement
+	|	readStatement
 ;
 
 printStatement
 	:	PRINT concatStrings+ ';'
 ;
 
+openFileStatement
+	:	OPEN FILE  ( INPUT | OUTPUT ) stringLiteral ';'
+;
+
+closeFileStatement
+	:	CLOSE ( INPUT | OUTPUT ) ';'
+;
+
+readStatement
+	:	READ variableIdentifier ( COUNT | UNTIL ) primary ';'
+;
+
 // FUNCTIONS
 
 builtinFunctionCall
-	:	builtinFunction '(' ')'
+	:	builtinFunction
 ;
 
 builtinFunction
-	:	CURRENTDATE
+	:	CURRENTDATE '(' ')'
 ;
 
 concatStrings
@@ -532,6 +547,17 @@ CURRENTDATE : [Cc] [Uu] [Rr] [Rr] [Ee] [Nn] [Tt] [Dd] [Aa] [Tt] [Ee];
 //////////     BUILTIN STATEMENT NAMES
 
 PRINT : [Pp] [Rr] [Ii] [Nn] [Tt];
+
+OPEN : [Oo] [Pp] [Ee] [Nn];
+FILE : [Ff] [Ii] [Ll] [Ee];
+INPUT : [Ii] [Nn] [Pp] [Uu] [Tt];
+OUTPUT : [Oo] [Uu] [Tt] [Pp] [Uu] [Tt];
+
+CLOSE : [Cc] [Ll] [Oo] [Ss] [Ee];
+
+READ : [Rr] [Ee] [Aa] [Dd];
+COUNT : [Cc] [Oo] [Uu] [Nn] [Tt];
+UNTIL : [Uu] [Nn] [Tt] [Ii] [Ll];
 
 // separators
 

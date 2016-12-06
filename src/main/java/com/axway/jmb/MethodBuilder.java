@@ -18,6 +18,8 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.AdviceAdapter;
 import org.objectweb.asm.commons.Method;
 
+import com.axway.jmb.builtin.Builtin;
+
 /**
  * Visitor for java method's build.
  *
@@ -286,11 +288,30 @@ public class MethodBuilder extends AdviceAdapter {
 			push( sb.toString() );
 			storeLocal(tempLocalVar, Type.getType(String.class));
 		}		
-		
-		getStatic(Type.getType(System.class), "out", Type.getType(PrintStream.class));
+				
 		loadLocal(tempLocalVar, Type.getType(String.class));
-		invokeVirtual(Type.getType(PrintStream.class),
-		         Method.getMethod("void println (String)"));		
+		invokeStatic(Type.getType(Builtin.class), Method.getMethod("void print ( Object )"));
+	}
+	
+	public void addCallToOpenFile( boolean forRead ) {
+		push ( forRead );
+		invokeStatic(Type.getType(Builtin.class), Method.getMethod("void openFile ( String , boolean )"));
+	}
+
+	public void addCallToCloseFile( boolean forRead ) {
+		push ( forRead );
+		invokeStatic(Type.getType(Builtin.class), Method.getMethod("void closeFile ( boolean )"));
+	}
+	
+	public void addCallToRead( ModuleBuilder mb, String variableName ) throws CompileException {
+		debug(" addCallToRead( " + variableName + ")");
+		invokeStatic(Type.getType(Builtin.class), Method.getMethod("String read ( Object )"));
+		if ( isLocalVariableDefined( variableName ) ) {
+			storeInLocalVar( variableName, false, 0 );
+		}
+		else {
+			storeInField( mb, variableName, false, 0 );
+		}
 	}
 	
 	public LocalVariable getVariable( String varName ) throws CompileException {
