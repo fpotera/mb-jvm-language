@@ -12,6 +12,7 @@ import sl.IArray;
 import sl.IChar;
 import sl.IDate;
 import sl.String;
+import sl.IFile.FileInfo;
 
 public class TestStageOfDevelopment {
 
@@ -25,7 +26,8 @@ public class TestStageOfDevelopment {
 //		test_SL_ARGUMENT_Module();
 //		test_SL_CHAR_Module();
 //		test_SL_DATE_Module();
-		test_SL_ARRAY_Module();
+//		test_SL_ARRAY_Module();
+		test_SL_FILE_Module();
 	}
 	
 	public static void test_SL_STRING_Module() {
@@ -218,7 +220,26 @@ public class TestStageOfDevelopment {
 
 		java.lang.String version = (java.lang.String) testArray.version();
 		System.out.println("SL_ARRAY.Version() : " + version);
-		
+	}
+	
+	public static void test_SL_FILE_Module() {
+		IFile testFile = File.getModule();
+
+		java.lang.String filePath = "C:\\RD\\Hackathon & Innovation\\Innovation November 2016\\de sters - Copy";
+		testFile.deletedirectorytree(filePath);
+
+		System.out.println("====================================================================================================");
+
+		filePath = "C:\\RD\\Hackathon & Innovation\\Innovation November 2016\\de sters";
+		FileInfo[] infos = (FileInfo[]) testFile.readdirectory(filePath);
+		for (FileInfo info : infos) {
+			System.out.println("File name: \"" + info.getName() + "\" type: \"" + info.getType() + "\" size: \"" + info.getSize() + "\"");
+		}
+
+		System.out.println("====================================================================================================");
+
+		java.lang.String version = (java.lang.String) testFile.version();
+		System.out.println("SL_FILE.Version() : " + version);
 	}
 
 }

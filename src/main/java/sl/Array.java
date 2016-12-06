@@ -1,8 +1,5 @@
 package sl;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import resources.ApplicationProperties;
 
 /**
