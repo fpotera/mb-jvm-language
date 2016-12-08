@@ -5,7 +5,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -40,7 +39,7 @@ public class File implements IFile {
 
 	@Override
 	public Object deletedirectorytree(Object... args) {
-		Path path = FileSystems.getDefault().getPath((java.lang.String) args[0]);
+		java.nio.file.Path path = FileSystems.getDefault().getPath((java.lang.String) args[0]);
 		try {
 			deleteFileOrFolder(path);
 		} catch (IOException | SecurityException e) {
@@ -52,9 +51,9 @@ public class File implements IFile {
 	@Override
 	public Object readdirectory(Object... args) {
 		List<FileInfo> infos = null;
-		Path directoryPath = Paths.get((java.lang.String) args[0]);
-		List<Path> directoryContents = listDirectoryContents(directoryPath);
-		for (Path path : directoryContents) {
+		java.nio.file.Path directoryPath = Paths.get((java.lang.String) args[0]);
+		List<java.nio.file.Path> directoryContents = listDirectoryContents(directoryPath);
+		for (java.nio.file.Path path : directoryContents) {
 			BasicFileAttributes fileAttributes = null;
 			try {
 				fileAttributes = Files.readAttributes(path, BasicFileAttributes.class);
@@ -84,16 +83,16 @@ public class File implements IFile {
 		return ApplicationProperties.getSL_FILEversion();
 	}
 	
-	private void deleteFileOrFolder(final Path path) throws IOException {
-		Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+	private void deleteFileOrFolder(final java.nio.file.Path path) throws IOException {
+		Files.walkFileTree(path, new SimpleFileVisitor<java.nio.file.Path>() {
 			@Override
-			public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+			public FileVisitResult visitFile(final java.nio.file.Path file, final BasicFileAttributes attrs) throws IOException {
 				Files.deleteIfExists(file);
 				return FileVisitResult.CONTINUE;
 			}
 
 			@Override
-			public FileVisitResult postVisitDirectory(final Path dir, final IOException e) throws IOException {
+			public FileVisitResult postVisitDirectory(final java.nio.file.Path dir, final IOException e) throws IOException {
 				if (e != null) {
 					e.printStackTrace();
 					return FileVisitResult.TERMINATE;
@@ -103,17 +102,17 @@ public class File implements IFile {
 			}
 
 			@Override
-			public FileVisitResult visitFileFailed(final Path file, final IOException e) {
+			public FileVisitResult visitFileFailed(final java.nio.file.Path file, final IOException e) {
 				e.printStackTrace();
 				return FileVisitResult.TERMINATE;
 			}
 		});
 	}
 
-	private List<Path> listDirectoryContents(Path path) {
-		List<Path> files = new ArrayList<Path>();
-		try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(path)) {
-			for (Path directoryPath : directoryStream) {
+	private List<java.nio.file.Path> listDirectoryContents(java.nio.file.Path path) {
+		List<java.nio.file.Path> files = new ArrayList<java.nio.file.Path>();
+		try (DirectoryStream<java.nio.file.Path> directoryStream = Files.newDirectoryStream(path)) {
+			for (java.nio.file.Path directoryPath : directoryStream) {
 				files.add(directoryPath);
 			}
 		} catch (IOException e) {
