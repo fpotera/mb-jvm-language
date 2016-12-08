@@ -102,6 +102,17 @@ public class Utils {
 		return Type.getType( recordNameFullyQualified.replace(".", "/") );
 	}
 	
+	public static String getInterfaceModuleName ( String javaFullyQualifiedClassName ) {
+		int idx = javaFullyQualifiedClassName.lastIndexOf(".");
+		if ( idx == -1 ) {
+			idx = javaFullyQualifiedClassName.lastIndexOf("/");
+			if ( idx == -1 ) {
+				return "I"+javaFullyQualifiedClassName;
+			}
+		}
+		return javaFullyQualifiedClassName.substring(0, idx+1)+"I"+javaFullyQualifiedClassName.substring(idx+1);
+	}
+	
 	public static String getJavaFullyQualifiedInternalClassName ( String moduleNameOfMessageBuilder ) {
 		return  getJavaFullyQualifiedClassName( moduleNameOfMessageBuilder ).replace(".", "/");
 	}
@@ -139,3 +150,5 @@ public class Utils {
 		return fullyQualifiedClassName.replace(".", "/");
 	}
 }
+
+

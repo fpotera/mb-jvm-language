@@ -13,7 +13,10 @@ import java.util.HashMap;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckMethodAdapter;
+
+import com.axway.jmb.builders.Modules;
 
 /**
  * Class for Java MessageBuilder executable module generator.
@@ -41,6 +44,15 @@ public class ExecutableModuleBuilder extends ModuleBuilder {
 		mv = new CheckMethodAdapter(ACC_PUBLIC + ACC_STATIC, "main","([Ljava/lang/String;)V", mv, getLabels());
 		
 		mainMethod = new MethodBuilder( ASM5, mv, ACC_PUBLIC+ACC_STATIC, "main", "([Ljava/lang/String;)V" );		
+	}
+	
+	@Override
+	protected void buildModule () {
+		Modules.buildExecutableModule(this, classFullyQualifiedName );
+		
+		defineMainMethod();
+		
+		Modules.buildGetModuleMethod( this, Type.getType(classFullyQualifiedName), getLabels() );
 	}
 	
 	@Override

@@ -4,10 +4,15 @@
 grammar JMessageBuilder;
 
 @header {
-
+import java.util.Set;
+import java.util.HashSet;
 }
-@members {
-	boolean isString = false;
+@parser::members {
+	Set<String> types = new HashSet<String>();
+
+	boolean isModule() { return types.contains(getCurrentToken().getText()); }
+
+	boolean isModuleInterface = false;
 }
 
 
@@ -24,7 +29,7 @@ singleTypeIncludeDeclaration
 ;
 
 typeName
-	:	'"' Identifier '.s4h"'
+	:	'"' Identifier '.s4h"' { types.add($Identifier.text); }
 ;
 
 typeDeclaration
@@ -34,7 +39,7 @@ typeDeclaration
 	;
 
 moduleDeclaration
-	: DECLARE MODULE INTERFACE? moduleIdentifier moduleBody
+	: DECLARE MODULE INTERFACE? moduleIdentifier moduleBody { isModuleInterface = $INTERFACE != null; }
 ;
 
 adhocModuleBodyDeclaration
@@ -61,8 +66,8 @@ adhocModuleMemberDeclaration
 
 moduleMemberDeclaration
 	:	fieldDeclaration
-	|	functionDeclaration
-	|	procedureDeclaration
+	|	{!isModuleInterface}? functionDeclaration
+	|	{!isModuleInterface}? procedureDeclaration
 	|	';'
 ;
 
@@ -328,7 +333,7 @@ expressionName
 ;
 
 ambiguousName
-	:	Identifier
+	:	{isModule()}? Identifier
 	|	ambiguousName '.' Identifier
 ;
 
@@ -488,8 +493,6 @@ Sign
 ;
 
 stringLiteral
-@init { isString = true; }
-@after { isString = false; }
 	:	'"' StringCharacters? '"'
 ;
 
@@ -631,7 +634,7 @@ LetterOrDigit
 // Whitespace and comments
 //
 
-WS  : {!isString}? [ \t\r\n\u000C]+  -> skip
+WS  : [ \t\r\n\u000C]+  -> skip
 ;
 
 COMMENT

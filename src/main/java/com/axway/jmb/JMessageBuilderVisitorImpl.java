@@ -5,10 +5,10 @@
 
 package com.axway.jmb;
 
-import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.V1_7;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,7 +33,6 @@ import com.axway.jmb.JMessageBuilderParser.FloatingPointLiteralContext;
 import com.axway.jmb.JMessageBuilderParser.FunctionInvocationContext;
 import com.axway.jmb.JMessageBuilderParser.IntegerLiteralContext;
 import com.axway.jmb.JMessageBuilderParser.ModuleDeclarationContext;
-import com.axway.jmb.JMessageBuilderParser.ModuleIdentifierContext;
 import com.axway.jmb.JMessageBuilderParser.OpenFileStatementContext;
 import com.axway.jmb.JMessageBuilderParser.PrimaryContext;
 import com.axway.jmb.JMessageBuilderParser.PrintStatementContext;
@@ -46,9 +45,9 @@ import com.axway.jmb.JMessageBuilderParser.RecordTypeDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.SingleTypeIncludeDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.StringLiteralContext;
 import com.axway.jmb.JMessageBuilderParser.UnannTypeContext;
+import com.axway.jmb.annotations.ProcParameterNoiseWord;
 import com.axway.jmb.annotations.ProcedureParameter;
 import com.axway.jmb.annotations.ProcedureParameters;
-import com.axway.jmb.annotations.ProcParameterNoiseWord;
 import com.axway.jmb.builders.Methods;
 import com.axway.jmb.builtin.Builtin;
 
@@ -61,7 +60,8 @@ import com.axway.jmb.builtin.Builtin;
 public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void> {
 	private ModuleBuilder currentModule;
 	private MethodBuilder currentMethod;
-	private ConstructorBuilder currentConstructor; 
+	private ConstructorBuilder currentConstructor;
+	private ConstructorBuilder staticInitialiser;
 	private MethodBuilder mainMethod;
 	private ClassWriter currentInnerClass;
 	private ClassWriter currentClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
@@ -112,10 +112,25 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		return null;
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	//////   NON EXECUTABLE MODULE / MODULE INTERFACE DECLARATION		
+	
 	@Override
 	public Void visitModuleDeclaration(ModuleDeclarationContext ctx) {
 		if ( ctx.INTERFACE() != null )
-			isInterface = true;		
+			isInterface = true;	
+		
+		if ( isInterface ) {
+			debug("Generate module interface:"+ctx.moduleIdentifier().getText());
+			currentModule = new ModuleInterfaceBuilder(0, ctx.moduleIdentifier().getText(), currentClassWriter);
+		}
+		else {
+			debug("Generate module:"+ctx.moduleIdentifier().getText());
+			currentModule = new ModuleBuilder(0, ctx.moduleIdentifier().getText(), currentClassWriter);			
+		}
+		currentConstructor = currentModule.getConstructor();
+		staticInitialiser = currentModule.getStaticInitialiser();
+		
 		return super.visitModuleDeclaration(ctx);
 	}
 
@@ -131,38 +146,12 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 			
 			mainMethod = currentModule.getMainMethod();
 			currentConstructor = currentModule.getConstructor();
+			staticInitialiser = currentModule.getStaticInitialiser();
 			
 			classCreated = true;
 		}
 
 		return super.visitAdhocModuleBodyDeclaration(ctx);
-	}
-
-	///////////////////////////////////////////////////////////////////////////////
-	//////   SIMPLE MODULE DECLARATION	
-	
-	@Override
-	public Void visitModuleIdentifier(ModuleIdentifierContext ctx) {
-		
-        String pakage = Utils.getPackage( ctx.getText() );
-        String clazz = ( isInterface ? "I" : "" ) + Utils.getClass( ctx.getText() ); 
-        String classFullQualifiedName = pakage + "." + clazz;
-        String interfaceFullQualifiedName = pakage + "." + "I" + clazz;
-		
-		int generate = isInterface ? ACC_INTERFACE : 0 ;
-		String[] interfaces = isInterface ? null : new String[] { interfaceFullQualifiedName.replace(".", "/") };
-		
-		currentModule.visit(V1_7, ACC_PUBLIC + generate,
-				classFullQualifiedName.replace(".", "/"), null, Type.getType(Object.class).getInternalName(), interfaces);
-		
-		debug("Generate class:"+classFullQualifiedName);
-		
-//		if ( !isInterface ) {
-//			JMBModule mb = new JMBModule(mainClass, classFullQualifiedName);
-//			mb.addBaseCode();
-//		}
-		
-		return super.visitModuleIdentifier(ctx);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////
@@ -175,6 +164,14 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		super.visitFieldDeclaration(ctx);
 		
 		debug(" visitFieldDeclaration() "+ctx.variableDeclarator().variableDeclaratorId().variableIdentifier().getText());
+		
+		int fieldAccess = getFieldAccess( ctx.PUBLIC() );
+		if ( ctx.constOnce() != null && ctx.constOnce().CONSTANT() != null ) {
+			fieldAccess += ACC_FINAL;
+			if ( isInterface ) {
+				fieldAccess += ACC_STATIC;
+			}
+		}
 		
 		newVariable.setName( convertVariableName ( ctx.variableDeclarator().variableDeclaratorId().variableIdentifier().getText() ) );
 		if ( ctx.variableDeclarator().variableDeclaratorId().dims() != null ) {
@@ -217,10 +214,10 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		}
 		else {
 			if ( currentInnerClass != null ) {
-				((RecordClassBuilder) currentInnerClass).addField( getFieldAccess( ctx.PUBLIC() ), newVariable );				
+				((RecordClassBuilder) currentInnerClass).addField( fieldAccess, newVariable );				
 			}
 			else {
-				currentModule.addField( getFieldAccess( ctx.PUBLIC() ), newVariable );
+				currentModule.addField( fieldAccess, newVariable );
 			}
 		}
 

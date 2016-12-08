@@ -5,6 +5,7 @@
 package com.axway.jmb.builders;
 
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ASM5;
 import static org.objectweb.asm.Opcodes.DUP;
@@ -62,5 +63,18 @@ public class Constructors {
 		constructor.visitMethodInsn(INVOKESPECIAL, superClassInternalFQName, "<init>", "()V", false);	
 
 	}
+
+	public static ConstructorBuilder startStatic( ClassVisitor clazz ) {
+		MethodVisitor mv = clazz.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
+		
+		ConstructorBuilder constructor = new ConstructorBuilder(ASM5, mv, "()V");
+		constructor.visitCode();
+		return constructor;
+	}
 	
+	public static void endStatic( AdviceAdapter constructor, int maxStacks, int maxLocals ) {
+		constructor.visitInsn(RETURN);
+		constructor.visitMaxs(maxStacks, maxLocals);
+		constructor.visitEnd();	
+	}
 }
