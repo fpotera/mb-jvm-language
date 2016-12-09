@@ -108,4 +108,12 @@ public class ApplicationProperties {
 		return sl_string_Version;
 	}
 
+	/**
+	 * The version number of the SOCKET module
+	 */
+	public static String getSOCKETversion() {
+		String socket_Version = ApplicationProperties.getResource("socket_version");
+		return socket_Version;
+	}
+
 }
