@@ -23,10 +23,27 @@ import com.axway.jmb.Utils;
 
 public class Modules {
 	private static final String JAVA_BASE_MODULE_FQ_CLASS_NAME = "com.axway.jmb.JMBModule";
+
+	public static void buildExecutableModule ( ClassVisitor cv, String classFullyQualifiedName ) {
+		System.out.println( " build module for: " +classFullyQualifiedName);
+		
+		cv.visit(V1_7, ACC_PUBLIC, classFullyQualifiedName, null, Utils.getInternalFQClassName(JAVA_BASE_MODULE_FQ_CLASS_NAME), null);
+	}	
 	
 	public static void buildModule ( ClassVisitor cv, String classFullyQualifiedName ) {
 		System.out.println( " build module for: " +classFullyQualifiedName);
-		cv.visit(V1_7, ACC_PUBLIC, classFullyQualifiedName, null, Utils.getInternalFQClassName(JAVA_BASE_MODULE_FQ_CLASS_NAME), null);
+		
+		String interfaceFullyQualifiedName = Utils.getInterfaceModuleName( classFullyQualifiedName );
+		
+		String[] interfaces = new String[] { interfaceFullyQualifiedName };
+		
+		cv.visit(V1_7, ACC_PUBLIC, classFullyQualifiedName, null, Utils.getInternalFQClassName(JAVA_BASE_MODULE_FQ_CLASS_NAME), interfaces);
+	}
+	
+	public static void buildInterfaceModule(ClassVisitor cv,
+			String classFullyQualifiedName) {
+		System.out.println( " build interface module for: " +classFullyQualifiedName);
+		cv.visit(V1_7, ACC_PUBLIC, classFullyQualifiedName, null, "java/lang/Object", null);		
 	}
 	
 	public static void buildGetModuleMethod( ClassVisitor cv, Type classType, Map<Label,Integer> labels) {
@@ -51,4 +68,6 @@ public class Modules {
 		mv.visitMaxs(2, 0);
 		mv.visitEnd();
 	}
+
+
 }

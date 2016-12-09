@@ -5,6 +5,7 @@
 package com.axway.jmb;
 
 import static org.objectweb.asm.Opcodes.ASM5;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
 import java.io.PrintWriter;
 import java.util.HashMap;
@@ -28,12 +29,13 @@ import com.axway.jmb.builders.Modules;
 
 public class ModuleBuilder extends CheckClassAdapter {
 	
-	private String classFullyQualifiedName;
-	private ConstructorBuilder constructor;
+	protected String classFullyQualifiedName;
+	protected ConstructorBuilder constructor;
+	protected ConstructorBuilder staticInitialiser;
 	
 	private RecordClassBuilder currentRecordTypeDefinition;
 	
-	private Map<String, ClassField> fields = new HashMap<String, ClassField>();
+	protected Map<String, ClassField> fields = new HashMap<String, ClassField>();
 	
 	private Map<Label,Integer> labels = new HashMap<Label,Integer>();
 	
@@ -42,24 +44,38 @@ public class ModuleBuilder extends CheckClassAdapter {
 		
 		classFullyQualifiedName = Utils.getJavaFullyQualifiedInternalClassName( moduleFullyQualifiedName );
 		
+		buildModule();
+
+		buildModuleConstructor();
+	}
+	
+	protected void buildModule () {
 		Modules.buildModule(this, classFullyQualifiedName );
 		
 		defineMainMethod();
 		
 		Modules.buildGetModuleMethod( this, Type.getType(classFullyQualifiedName), getLabels() );
-				
-		constructor = Constructors.startDefault( this, Type.getType(JMBModule.class).getInternalName() );
 	}
-
+	
+	protected void buildModuleConstructor() {
+		constructor = Constructors.startDefault( this, Type.getType(JMBModule.class).getInternalName() );
+		staticInitialiser = Constructors.startStatic( this );
+	}
+	
 	public void addField (int access, ClassField field) {
 		fields.put(field.getName(), field);
 		
-		Fields.addFieldToClass(access, field, constructor, this, classFullyQualifiedName );
-		
+		if ( ( access & ACC_STATIC ) != ACC_STATIC ) {
+			Fields.addFieldToClass(access, field, constructor, this, classFullyQualifiedName );
+		}
+		else {
+			Fields.addFieldToClass(access, field, staticInitialiser, this, classFullyQualifiedName );
+		}
 	}
 	
 	public void visitEnded() {
 		Constructors.endDefault( constructor, 10, 10 );
+		Constructors.endStatic( staticInitialiser, 10, 10 );
 		visitEnd();
 	}
 	
@@ -109,4 +125,8 @@ public class ModuleBuilder extends CheckClassAdapter {
 	}
 
 	protected void defineMainMethod () {}
+
+	public ConstructorBuilder getStaticInitialiser() {
+		return staticInitialiser;
+	}
 }

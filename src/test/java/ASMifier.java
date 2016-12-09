@@ -1,5 +1,7 @@
 
-public class ASMifier {
+public class ASMifier implements Test{
+	
+	
 	public Object[] call (Object... args) {		
 		Long longObject = (Long) new Object();
 		
@@ -14,7 +16,10 @@ public class ASMifier {
 	
 	public static void main (String[] args) throws Exception {
 		
-		
-		org.objectweb.asm.util.ASMifier.main(new String[] {"ASMifier"});
+		org.objectweb.asm.util.ASMifier.main(new String[] {"Test"});
 	}
+}
+
+interface Test {
+	public Long aaa = new Long(24);
 }
