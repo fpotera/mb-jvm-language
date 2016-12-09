@@ -310,6 +310,17 @@ public class TestStageOfDevelopment {
 	public static void test_SL_SORT_Module() {
 		ISort testFile = Sort.getModule();
 
+		Elem[] vegetablesToSort = { new Elem("Lettuce", 1L), new Elem("Lettuce", 2L), new Elem("Aubergine", 2L), new Elem("Pumpkin", 5L), new Elem("Radish", 3L), new Elem("Garlic", 5L), new Elem("Onion", 7L) };
+
+		System.out.println(java.util.Arrays.toString(vegetablesToSort));
+
+		java.lang.String compareFunction = "sl.CompareElem.compare";
+		testFile.heapsort_any(vegetablesToSort, compareFunction);
+
+		System.out.println(java.util.Arrays.toString(vegetablesToSort));
+
+		System.out.println("====================================================================================================");
+
 //		java.lang.String[] vegetables = { "Asparagus", "Aubergine", "Bean", "Beetroot", "Carrot", "Courgette", "Garlic", "Lettuce", "Mushroom", "Onion", "Pumpkin", "Radish" };java.lang.String[] vegetables = { "Asparagus", "Aubergine", "Bean", "Beetroot", "Carrot", "Courgette", "Garlic", "Lettuce", "Mushroom", "Onion", "Pumpkin", "Radish" };
 		java.lang.String[] vegetables = { "Radish", "Aubergine", "Bean", "Beetroot", "Carrot", "Garlic", "Lettuce", "Mushroom", "Asparagus", "Onion", "Pumpkin", "Courgette" };
 		System.out.println(java.util.Arrays.toString(vegetables));

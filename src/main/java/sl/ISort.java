@@ -15,7 +15,7 @@ public interface ISort {
 	 * 				</br>&emsp;<code>It should take two arguments (the array elements to compare) and return minus one if the first element is less than the second, zero if the elements are equal, or plus one if the first element is greater than the second one.</code>
 	 * @return the sorted array.
 	 */
-	public abstract Object heapsort_any(Object... args);
+	public abstract <T> T[] heapsort_any(Object... args);
 
 	/**
 	 * <code><b><i>SL_SORT.HeapSort_String</i></b></code> - Function that sorts an array of strings using the heap-sort algorithm

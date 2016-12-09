@@ -1,5 +1,8 @@
 package sl;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import resources.ApplicationProperties;
 
 /**
@@ -27,9 +30,30 @@ public class Sort implements ISort {
 	}
 
 	@Override
-	public Object heapsort_any(Object... args) {
-		java.lang.String[] arrayToSort = (java.lang.String[]) args[0];
-		return null;
+	public <T> T[] heapsort_any(Object... args) {
+		@SuppressWarnings("unchecked")
+		T[] arrayToSort = (T[]) args[0];
+		java.lang.String compareFunction = (java.lang.String) args[1];
+
+		java.lang.String functionClass = compareFunction.substring(0, compareFunction.lastIndexOf('.'));
+		java.lang.String functionName = compareFunction.substring(compareFunction.lastIndexOf('.') + 1);
+
+		Class<?> clazz = arrayToSort.getClass().getComponentType();
+		Method comparator = null;
+		try {
+			comparator = Class.forName(functionClass).getDeclaredMethod(functionName, clazz, clazz);
+		} catch (NoSuchMethodException | SecurityException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		int n = arrayToSort.length;
+		for (int k = n / 2; k >= 1; k--)
+			this.sink(arrayToSort, k, n, comparator);
+		while (n > 1) {
+			this.exchange(arrayToSort, 1, n--);
+			this.sink(arrayToSort, 1, n, comparator);
+		}
+		return arrayToSort;
 	}
 
 	@Override
@@ -61,6 +85,28 @@ public class Sort implements ISort {
 		return ApplicationProperties.getSL_SORTversion();
 	}
 
+	private <T> void sink(T[] arrayToSort, int k, int n, Method comparator) {
+		while (2 * k <= n) {
+			int j = 2 * k;
+			if (j < n && this.less(arrayToSort, j, j + 1, comparator))
+				j++;
+			if (!this.less(arrayToSort, k, j, comparator))
+				break;
+			this.exchange(arrayToSort, k, j);
+			k = j;
+		}
+	}
+
+	private <T> boolean less(T[] arrayToSort, int i, int j, Method comparator) {
+		int result = 0;
+		try {
+			result = ((Integer) comparator.invoke(comparator.getDeclaringClass().newInstance(), arrayToSort[i - 1], arrayToSort[j - 1])).intValue();
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | InstantiationException e) {
+			e.printStackTrace();
+		}
+		return result < 0;
+	}
+
 	/***************************************************************************
 	 * Helper functions to restore the heap invariant.
 	 ***************************************************************************/
@@ -78,21 +124,16 @@ public class Sort implements ISort {
 	}
 
 	/***************************************************************************
-	 * Helper functions for comparisons and swaps. Indices are "off-by-one" to
-	 * support 1-based indexing.
+	 * Helper functions for comparisons and swaps. Indices are "off-by-one" to support 1-based indexing.
 	 ***************************************************************************/
 	private boolean less(Comparable[] arrayToSort, int i, int j) {
 		return arrayToSort[i - 1].compareTo(arrayToSort[j - 1]) < 0;
 	}
 
-	private void exchange(Object[] arrayToSort, int i, int j) {
-		Object swap = arrayToSort[i - 1];
+	private <T> void exchange(T[] arrayToSort, int i, int j) {
+		T swap = arrayToSort[i - 1];
 		arrayToSort[i - 1] = arrayToSort[j - 1];
 		arrayToSort[j - 1] = swap;
-	}
-
-	private boolean less(Comparable v, Comparable w) {
-		return v.compareTo(w) < 0;
 	}
 
 	/**

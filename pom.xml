@@ -50,6 +50,12 @@
 		    <artifactId>asm-analysis</artifactId>
 		    <version>${asm.version}</version>
 		</dependency>
+		
+		<dependency>
+		    <groupId>org.apache.tomcat</groupId>
+		    <artifactId>tomcat-jni</artifactId>
+		    <version>9.0.0.M3</version>
+		</dependency>  
 	</dependencies>
 
 	<build>
