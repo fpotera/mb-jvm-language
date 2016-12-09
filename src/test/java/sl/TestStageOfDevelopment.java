@@ -22,7 +22,9 @@ public class TestStageOfDevelopment {
 //		test_SL_ARRAY_Module();
 //		test_SL_FILE_Module();
 //		test_SL_HASH_Module();
-		test_SL_PATH_Module();
+//		test_SL_PATH_Module();
+//		test_SL_SEARCH_Module();
+		test_SL_SORT_Module();
 	}
 	
 	public static void test_SL_STRING_Module() {
@@ -289,6 +291,60 @@ public class TestStageOfDevelopment {
 
 		java.lang.String version = (java.lang.String) testFile.version();
 		System.out.println("SL_PATH.Version() : " + version);
+	}
+
+	public static void test_SL_SEARCH_Module() {
+		ISearch testFile = Search.getModule();
+
+		java.lang.String[] fruits = { "Apple", "Apricot", "Banana", "Cherry", "Grape", "Lemon", "Melon", "Orange", "Pear", "Strawberry", "Watermelon" };
+		java.lang.String toFind = "Mango";
+//		java.lang.String toFind = "Cherry";
+		System.out.println("Found at position : " + testFile.binarysearch(fruits, toFind));
+
+		System.out.println("====================================================================================================");
+
+		java.lang.String version = (java.lang.String) testFile.version();
+		System.out.println("SL_SEARCH.Version() : " + version);
+	}
+
+	public static void test_SL_SORT_Module() {
+		ISort testFile = Sort.getModule();
+
+//		java.lang.String[] vegetables = { "Asparagus", "Aubergine", "Bean", "Beetroot", "Carrot", "Courgette", "Garlic", "Lettuce", "Mushroom", "Onion", "Pumpkin", "Radish" };java.lang.String[] vegetables = { "Asparagus", "Aubergine", "Bean", "Beetroot", "Carrot", "Courgette", "Garlic", "Lettuce", "Mushroom", "Onion", "Pumpkin", "Radish" };
+		java.lang.String[] vegetables = { "Radish", "Aubergine", "Bean", "Beetroot", "Carrot", "Garlic", "Lettuce", "Mushroom", "Asparagus", "Onion", "Pumpkin", "Courgette" };
+		System.out.println(java.util.Arrays.toString(vegetables));
+		java.lang.String[] sortedVegetablesArray = (java.lang.String[]) testFile.heapsort_string(vegetables);
+		for (int i = 0; i < sortedVegetablesArray.length; i++) {
+			if (i < sortedVegetablesArray.length - 1) {
+				System.out.print(sortedVegetablesArray[i] + ", ");
+			} else {
+				System.out.print(sortedVegetablesArray[i] + "\n");
+			}
+		}
+
+		System.out.println("====================================================================================================");
+
+//		java.lang.String[] fruits = { "Banana", "Apple", "Apricot" };
+		java.lang.String[] fruits = { "Watermelon", "Apricot", "Banana", "Cherry", "Grape", "Lemon", "Melon", "Apple", "Pear", "Strawberry", "Orange" };
+		System.out.println(java.util.Arrays.toString(fruits));
+//		Long from = Long.valueOf(0L);
+//		Long to = Long.valueOf(fruits.length - 1);
+		Long from = Long.valueOf(1L);
+		Long to = Long.valueOf(fruits.length - 3);
+		java.lang.String[] sortedArray = (java.lang.String[]) testFile.quicksort_string(fruits, from, to);
+		for (int i = 0; i < sortedArray.length; i++) {
+			if (i < sortedArray.length - 1) {
+				System.out.print(sortedArray[i] + ", ");
+			} else {
+				System.out.print(sortedArray[i] + "\n");
+			}
+		}
+
+		System.out.println("====================================================================================================");
+
+		java.lang.String version = (java.lang.String) testFile.version();
+		System.out.println("SL_SORT.Version() : " + version);
+
 	}
 
 }
