@@ -85,6 +85,22 @@ public class ApplicationProperties {
 	}
 
 	/**
+	 * The version number of the SL_SEARCH module
+	 */
+	public static String getSL_SEARCHversion() {
+		String sl_search_Version = ApplicationProperties.getResource("sl_search_version");
+		return sl_search_Version;
+	}
+
+	/**
+	 * The version number of the SL_SORT module
+	 */
+	public static String getSL_SORTversion() {
+		String sl_sort_Version = ApplicationProperties.getResource("sl_sort_version");
+		return sl_sort_Version;
+	}
+
+	/**
 	 * The version number of the SL_STRING module
 	 */
 	public static String getSL_STRINGversion() {
