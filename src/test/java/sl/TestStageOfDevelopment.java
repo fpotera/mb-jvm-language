@@ -24,7 +24,8 @@ public class TestStageOfDevelopment {
 //		test_SL_HASH_Module();
 //		test_SL_PATH_Module();
 //		test_SL_SEARCH_Module();
-		test_SL_SORT_Module();
+//		test_SL_SORT_Module();
+		test_SOCKET_Module();
 	}
 	
 	public static void test_SL_STRING_Module() {
@@ -355,7 +356,15 @@ public class TestStageOfDevelopment {
 
 		java.lang.String version = (java.lang.String) testFile.version();
 		System.out.println("SL_SORT.Version() : " + version);
+	}
 
+	public static void test_SOCKET_Module() {
+		ISocket testFile = Socket.getModule();
+
+		System.out.println("====================================================================================================");
+
+		java.lang.String version = (java.lang.String) testFile.version();
+		System.out.println("SOCKET.Version() : " + version);
 	}
 
 }
