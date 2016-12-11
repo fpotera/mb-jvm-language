@@ -45,6 +45,7 @@ import com.axway.jmb.JMessageBuilderParser.RecordTypeDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.SingleTypeIncludeDeclarationContext;
 import com.axway.jmb.JMessageBuilderParser.StringLiteralContext;
 import com.axway.jmb.JMessageBuilderParser.UnannTypeContext;
+import com.axway.jmb.JMessageBuilderParser.VariableIdentifierContext;
 import com.axway.jmb.annotations.ProcParameterNoiseWord;
 import com.axway.jmb.annotations.ProcedureParameter;
 import com.axway.jmb.annotations.ProcedureParameters;
@@ -282,14 +283,21 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 //			debug(" visitProcedureDeclaration()"+ctx.procedureFormalParameters().procedureFormalParameterList().procedureFormalParameter().size());		
 		}
 		else {
-			currentMethod = Methods.buildProcedureWithoutParameters(currentModule, ctx.Identifier().getText(), 
+			String procedureName = "";
+			if ( ctx.Identifier() != null ) {
+				procedureName = ctx.Identifier().getText();
+			}
+			if ( ctx.START() != null ) {
+				procedureName = "START";
+			}
+			currentMethod = Methods.buildProcedureWithoutParameters(currentModule, procedureName, 
 					getMethodAccess(ctx.PUBLIC()), currentModule.getLabels());
 		}
 		
 		super.visitProcedureDeclaration(ctx);
 		
 		currentMethod.returnValue();
-		currentMethod.visitMaxs(20, 2);	
+		currentMethod.visitMaxs(40, 2);	
 		currentMethod.visitEnd();
 
 		currentMethod = null;
@@ -304,7 +312,15 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 	public Void visitProcedureCall(ProcedureCallContext ctx) {		
 //		super.visitProcedureCall(ctx);
 		debug("visitProcedureCall():"+currentModule.getClassFullyQualifiedName());
-		String procedureCall = ctx.expressionName().getText();
+		
+		String procedureCall = "";
+		if ( ctx.START() != null ) {
+			procedureCall = "START";
+		}
+		if ( ctx.SL_STRING_REVERSE() != null ) {
+			procedureCall = "SL_STRING.REVERSE";
+		}
+		
 		String procedureName = procedureCall;
 		String moduleName = "";
 		if ( procedureCall.contains(".") ) {
@@ -378,8 +394,14 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 	
 	@Override
 	public Void visitStringLiteral(StringLiteralContext ctx) {
-		saveLiteral( ctx.getText().substring(1, ctx.getText().length()-1) );
-		
+		String str = ctx.getText().substring(1, ctx.getText().length()-1);
+		if ( str.equals("nl") ) {
+			str = "\n";
+		}
+		if ( str.contains("dp") ) {
+			str = str.replaceAll("dp", ":");
+		}
+		saveLiteral( str );		
 		return super.visitStringLiteral(ctx);
 	}
 
@@ -483,6 +505,61 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		return null;
 	}	
 	
+	
+	///////////////////////////////////////////////////////////////////////////////
+	//////   VARIABLE IDENTIFIER 
+	
+	@Override
+	public Void visitVariableIdentifier(VariableIdentifierContext ctx) {
+		super.visitVariableIdentifier(ctx);
+		
+		if ( isStatementCall ) {
+			try {
+				debug("visitVariableIdentifier() for statementCallParameter");
+				String varName = convertVariableName ( ctx.getText() );
+				if ( currentMethod != null ) {
+					currentMethod.visitInsn(Opcodes.DUP);
+					currentMethod.visitInsn(Opcodes.ICONST_0+statementCallCurrentParameterIndex);					
+					
+					if ( currentMethod.isLocalVariableDefined( varName ) ) {
+						currentMethod.loadFromLocalVar( varName, false, 0 );
+					}
+					else if ( currentModule.isFieldDefined(varName) ) {
+						currentMethod.loadFromField( currentModule, varName, false, 0 );
+					}
+					else {
+						throw new CompileException("Variable "+varName+" used, but not defined.");
+					}
+
+					currentMethod.visitInsn(Opcodes.AASTORE);					
+				}
+				else {
+					currentConstructor.visitInsn(Opcodes.DUP);
+					currentConstructor.visitInsn(Opcodes.ICONST_0+statementCallCurrentParameterIndex);
+					
+					if ( currentConstructor.isLocalVariableDefined( varName ) ) {
+						currentConstructor.loadFromLocalVar( varName, false, 0 );
+					}
+					else if ( currentModule.isFieldDefined(varName) ) {
+						currentConstructor.loadFromField( currentModule, varName, false, 0 );
+					}
+					else {
+						throw new CompileException("Variable "+varName+" used, but not defined.");
+					}
+					
+					currentConstructor.visitInsn(Opcodes.AASTORE);
+				}
+
+				statementCallCurrentParameterIndex++;
+			} catch (CompileException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
+		
+		return null;
+	}	
+	
 	///////////////////////////////////////////////////////////////////////////////
 	//////   CALL BUILTIN PRINT PROCEDURE		
 	
@@ -498,6 +575,12 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 						String str = node.getText();
 						if ( node instanceof StringLiteralContext ) {
 							str = str.substring(1, str.length()-1);
+							if ( str.equals("nl") ) {
+								str = "\n";
+							}
+							if ( str.contains("dp") ) {
+								str = str.replaceAll("dp", ":");
+							}
 						}
 						lst.add( str );
 					}
@@ -654,13 +737,13 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 			if ( currentMethod != null ) {
 				currentMethod.visitInsn(Opcodes.DUP);
 				currentMethod.visitInsn(Opcodes.ICONST_0+statementCallCurrentParameterIndex);
-				currentMethod.visitLdcInsn( obj );
+				currentMethod.pushOnStack( obj );
 				currentMethod.visitInsn(Opcodes.AASTORE);
 			}
 			else {
 				currentConstructor.visitInsn(Opcodes.DUP);
 				currentConstructor.visitInsn(Opcodes.ICONST_0+statementCallCurrentParameterIndex);
-				currentConstructor.visitLdcInsn( obj );
+				currentConstructor.pushOnStack( obj );
 				currentConstructor.visitInsn(Opcodes.AASTORE);
 			}
 			statementCallCurrentParameterIndex++;

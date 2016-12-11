@@ -1,4 +1,3 @@
-package sl;
 
 /**
  * The SOCKET extension module contains functions and statements for handling sockets.

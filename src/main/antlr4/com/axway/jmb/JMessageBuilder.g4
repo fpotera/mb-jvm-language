@@ -101,7 +101,9 @@ functionFormalParameter
 ;
 
 procedureDeclaration
-    :   DECLARE PUBLIC? STATEMENT Identifier procedureFormalParameters
+    :   DECLARE PUBLIC? STATEMENT START procedureFormalParameters
+        (   methodBody	|   ';'  )
+    |   DECLARE PUBLIC? STATEMENT Identifier procedureFormalParameters
         (   methodBody	|   ';'  )
 ;
 
@@ -166,7 +168,10 @@ blockStatement
 //////////////   PROCEDURE CALLS
 
 procedureCall
-	:	'CALL' expressionName procedureRealParameterList?
+//	:	'CALL' expressionName procedureRealParameterList?
+	:	START procedureRealParameterList?
+	|	SL_STRING_REVERSE procedureRealParameterList?
+	|	SOCKET_DICONNECT procedureRealParameterList?
 ;
 
 procedureRealParameterList
@@ -176,6 +181,17 @@ procedureRealParameterList
 procedureRealParameter
 	:	expression
 ;
+
+START
+	:	[Ss] [Tt] [Aa] [Rr] [Tt]
+;
+
+SL_STRING_REVERSE
+	:	[Ss] [Ll] [_] [Ss] [Tt] [Rr] [Ii] [Nn] [Gg] '.' [Rr] [Ee] [Vv] [Ee] [Rr] [Ss] [Ee]
+;
+
+SOCKET_DICONNECT
+	:	[Ss] [Oo] [Cc] [Kk] [Ee] [Tt] '.' [Dd] [Ii] [Ss] [Cc] [Oo] [Nn] [Nn] [Ee] [Cc] [Tt];
 
 ///////////////////////////////////////////////////////////////////////////////////
 //////////////   VARIABLES

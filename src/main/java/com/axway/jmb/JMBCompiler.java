@@ -5,11 +5,12 @@
 
 package com.axway.jmb;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ServerSocket;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -52,7 +53,7 @@ public class JMBCompiler {
 		this.visitor = visitor;
 	}
 	
-	public static void main (String[] args) throws IOException {
+	public static void main (String[] args) throws IOException {		
 		String destDir = ClassFileWriter.DEFAULT_BASE_DIR;
 		String inputFile = null;
 		for ( String arg : args ) {
@@ -88,6 +89,8 @@ public class JMBCompiler {
         String fileName = ( Utils.isModuleInterface( inputFile ) ? "I" : "" ) + Utils.getClass( inputFile );
         String executableModuleName = Utils.getModuleName( inputFile );
         
+        is = filterStream( is );
+        
         JMBCompiler compiler = new JMBCompiler(is);        
         ParseTree tree = compiler.parse();
         compiler.setVisitor( new JMessageBuilderVisitorImpl( Utils.isExecutableModule(inputFile) ? executableModuleName : null ) );
@@ -104,7 +107,29 @@ public class JMBCompiler {
         System.out.println("Compiled successfuly.");
 	}
 	
-	
+	private static InputStream filterStream ( InputStream input ) throws IOException {
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		byte[] buffer = new byte[10000];
+		long count = 0;
+		int n = 0;
+		while (-1 != (n = input.read(buffer))) {			
+			StringBuilder sb = new StringBuilder(new String(buffer, 0, n));
+			int fromIndex = sb.length();
+			int idx = sb.lastIndexOf("\\n", fromIndex);
+			
+			while ( idx != -1 ) {
+				sb.replace(idx, idx+2, "nl");
+				fromIndex = idx;
+				idx = sb.lastIndexOf("\\n", fromIndex);
+			}
+			
+			String str = sb.toString();
+			str = str.replaceAll(":", "dp");
+			output.write(str.getBytes(), 0, str.getBytes().length);
+			count += n;
+		}
+		return new ByteArrayInputStream(output.toByteArray());
+	}
 
 }
 
