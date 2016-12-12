@@ -320,6 +320,9 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		if ( ctx.SL_STRING_REVERSE() != null ) {
 			procedureCall = "SL_STRING.REVERSE";
 		}
+		if ( ctx.SOCKET_DICONNECT() != null ) {
+			procedureCall = "SOCKET.DISCONNECT";
+		}
 		
 		String procedureName = procedureCall;
 		String moduleName = "";
@@ -797,7 +800,7 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 							throw new CompileException("Call remote statement "+moduleName+"."+procedureName+"  with OUT parameter " + indexInParams + " as a primitive and not as a variable.");
 						}
 						// put reference on stack
-						String varName = convertVariableName( rp.expression().primary().variableIdentifier().getText() );
+						String varName = convertVariableName( rp.expression().primary().variableIdentifier().getText() );						
 						varName = "y";
 						if ( crtMet.isLocalVariableDefined(varName) ) {
 							crtMet.loadFromLocalVar( varName, true, indexOfInParametersInCallArray );

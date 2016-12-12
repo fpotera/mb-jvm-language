@@ -20,6 +20,13 @@ import org.apache.tomcat.jni.Address;
 import org.apache.tomcat.jni.Library;
 import org.apache.tomcat.jni.Sockaddr;
 
+import com.axway.jmb.ProcedureParameterIOType;
+import com.axway.jmb.annotations.FuncOrProcParameterDefaultValue;
+import com.axway.jmb.annotations.FuncOrProcParameterType;
+import com.axway.jmb.annotations.ProcParameterNoiseWord;
+import com.axway.jmb.annotations.ProcedureParameter;
+import com.axway.jmb.annotations.ProcedureParameters;
+
 import resources.ApplicationProperties;
 
 /**
@@ -128,14 +135,42 @@ public class Socket implements ISocket {
 	}
 
 	@Override
+	@ProcedureParameters({
+		@ProcedureParameter(paramIOType=ProcedureParameterIOType.IN,
+				paramType=@FuncOrProcParameterType(type = FuncOrProcParameterType.Type.PRIMITIVE),
+				defaulValue=@FuncOrProcParameterDefaultValue(FuncOrProcParameterDefaultValue.Value.NONE),
+				noiseWord=@ProcParameterNoiseWord(ProcParameterNoiseWord.Word.DEFAULT))
+	})
 	public void disconnect(Object... args) {
 		Long toBeClosed = (Long) args[0];
 		
-		if(serverSockets.containsKey(toBeClosed))
-			serverSockets.remove(toBeClosed);
-		if(clientSockets.containsKey(toBeClosed))
-			clientSockets.remove(toBeClosed);
-		
+		if(serverSockets.containsKey(toBeClosed)) {
+			ServerSocketClass ss = serverSockets.remove(toBeClosed);
+			try {
+				ss.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
+		if(serverSocketsConnected.containsKey(toBeClosed)) {
+			SocketChannel ss = serverSocketsConnected.remove(toBeClosed);
+			try {
+				ss.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
+		if(clientSockets.containsKey(toBeClosed)) {
+			ClientSocketClass ss = clientSockets.remove(toBeClosed);
+			try {
+				ss.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
 	}
 
 	@Override
@@ -393,6 +428,10 @@ public class Socket implements ISocket {
     	  }
 	    }
 	    
+	    public void close() throws IOException {
+	    	serverChannel.close();
+	    }
+	    
 	    //accept a connection made to this channel's socket
 	    private String accept(SelectionKey key, boolean isNonBlocking) throws IOException {
 	        
@@ -491,6 +530,10 @@ public class Socket implements ISocket {
 			numRead = client.read(buffer);
 
 			return (long) numRead;
+		}
+		
+		public void close() throws IOException {
+			client.close();
 		}
 	}
 	
