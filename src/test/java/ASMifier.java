@@ -16,7 +16,7 @@ public class ASMifier implements Test{
 	
 	public static void main (String[] args) throws Exception {
 		
-		org.objectweb.asm.util.ASMifier.main(new String[] {"Test"});
+		org.objectweb.asm.util.ASMifier.main(new String[] {"ASMifier"});
 	}
 }
 

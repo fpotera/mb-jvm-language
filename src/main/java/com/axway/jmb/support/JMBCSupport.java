@@ -4,6 +4,9 @@
 // for additional copyright notices.
 package com.axway.jmb.support;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * Java methods used as support of JMB compiler at execution of generated code.
  *
@@ -40,5 +43,9 @@ public class JMBCSupport {
 		return str.toCharArray();
 	}
 	
-
+	public static String formatDateDefault ( Date date ) {
+		SimpleDateFormat format = new SimpleDateFormat("yyMMdd");
+		String str = format.format(date);
+		return str;
+	}
 }

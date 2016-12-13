@@ -1,8 +1,11 @@
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -94,8 +97,6 @@ public class Socket implements ISocket {
 			System.exit(1);
 		}
 		
-		System.out.println("accept executed");
-		
 		return socketId;
 	}
 
@@ -123,13 +124,17 @@ public class Socket implements ISocket {
 		else 
 			port = Integer.valueOf(service);
 		
-		ClientSocketClass cliSocket = new ClientSocketClass(host, port);		
+		ClientSocketClass cliSocket = null;
+		try {
+			cliSocket = new ClientSocketClass(host, port);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}		
 		
 		int socketId = clientSocketsIndex++;
 		
 		clientSockets.put((long) socketId, cliSocket);
-		
-		System.out.println("connect executed");
 		
 		return Long.valueOf(socketId);
 	}
@@ -213,8 +218,6 @@ public class Socket implements ISocket {
 		
 		serverSockets.put((long) socketId, serverSocket);
 		
-		System.out.println("listen executed");
-		
 		return Long.valueOf(socketId);
 	}
 
@@ -241,6 +244,7 @@ public class Socket implements ISocket {
 		boolean isServerSocket=false;
 
 		ByteBuffer buffer = ByteBuffer.allocate(size.intValue());
+		buffer.clear();
 		
 		if(serverSocketsConnected.containsKey(socketId))
 		{
@@ -275,12 +279,10 @@ public class Socket implements ISocket {
 		}
 		else{
 			try {
-				int cnt =  socket.read(buffer, false).intValue();
+				byte[] buff = new byte[1000];
+				int cnt =  socket.read(buff, false).intValue();
 				if ( cnt != -1 ) {
-					byte[] buff = new byte[cnt];
-					buffer.rewind();
-					buffer.get(buff, 0, cnt);
-					return new String( buff );					
+					return new String( buff, 0, cnt );					
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -332,7 +334,7 @@ public class Socket implements ISocket {
 		if(isServerSocket){
 			try {
 				ssocket.configureBlocking(true);
-				return ssocket.write( ByteBuffer.wrap( data.getBytes() ) );
+				return new Long ( ssocket.write( ByteBuffer.wrap( data.getBytes() ) ) );
 			} catch (IOException e) {
 				e.printStackTrace();
 				return 0L;
@@ -340,7 +342,7 @@ public class Socket implements ISocket {
 		}
 		else{
 			try {
-				return socket.write(data, false);
+				return new Long ( socket.write(data, false) );
 			} catch (IOException e) {
 				e.printStackTrace();
 				return 0L;
@@ -493,6 +495,42 @@ public class Socket implements ISocket {
 	
 	private class ClientSocketClass{
 		
+		private InetAddress hostAddress;
+		private java.net.Socket client;
+		
+		public ClientSocketClass(String hostname, int port) throws IOException{
+			hostAddress = InetAddress.getByName(hostname);
+
+			client = new java.net.Socket(hostAddress, port);
+
+		}
+		
+		public Long write(String data, boolean isNonBlocking) throws IOException {
+
+
+			client.getOutputStream().write(data.getBytes());
+
+			return (long) data.length();
+		}
+		
+		public Long read(byte[] buffer, boolean isNonBlocking) throws IOException {
+
+			int numRead = -1;
+
+			numRead = client.getInputStream().read(buffer);
+
+			return (long) numRead;
+		}
+		
+		public void close() throws IOException {
+			client.close();
+		}
+	}
+	
+	
+/*	
+	private class ClientSocketClass{
+		
 		private InetSocketAddress hostAddress;
 		private SocketChannel client;
 		
@@ -523,10 +561,12 @@ public class Socket implements ISocket {
 
 			int numRead = -1;
 
-			if (isNonBlocking)
+			if (isNonBlocking) {
 				client.configureBlocking(false);
-			else
-				client.configureBlocking(true);
+			}
+			else {
+				client.configureBlocking(true);			
+			}
 			numRead = client.read(buffer);
 
 			return (long) numRead;
@@ -536,5 +576,5 @@ public class Socket implements ISocket {
 			client.close();
 		}
 	}
-	
+*/	
 }

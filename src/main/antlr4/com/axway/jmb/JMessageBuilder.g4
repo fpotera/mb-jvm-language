@@ -161,6 +161,7 @@ blockStatement
     |	callInternalProcedure
     |	procedureCall ';'
     |	assignmentExpression ';'
+    |	RETURN ';'
     |	';'
 ;
 
@@ -446,9 +447,16 @@ concatStrings
 
 primary
 	:	literal
-	|	variableIdentifier
+	|	variableIdentifier arrs?
 ;
 
+arrs
+	:	arr (arr)*
+;
+
+arr
+	:	'[' literal ']'
+;
 
 // LITERALS
 
@@ -556,6 +564,8 @@ CHAR : [Cc] [Hh] [Aa] [Rr];
 DATE : [Dd] [Aa] [Tt] [Ee];
 
 CONSTANT : [Cc] [Oo] [Nn] [Ss] [Tt] [Aa] [Nn] [Tt];
+
+RETURN : [Rr] [Ee] [Tt] [Uu] [Rr] [Nn];
 
 ///////////////////////////////////////////////////////////////////////////////
 //////////     BUILTIN FUNCTION NAMES

@@ -417,6 +417,43 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 		debug(" visitAssignment() :"+ctx.leftHandSide().getText());	
 		
 		try {
+			boolean isArray = false;
+			String loadFromVarName = null;
+			String arrayIndex = null;
+			if ( ctx.expression().primary() != null && ctx.expression().primary().arrs() != null ) {
+				// is array access
+				isArray = true;
+				loadFromVarName = convertVariableName (ctx.expression().primary().variableIdentifier().getText());
+				arrayIndex = ctx.expression().primary().arrs().arr(0).literal().getText();
+				debug("arr access:"+loadFromVarName+" ["+arrayIndex);
+				
+				if ( currentMethod != null ) {
+					if ( currentMethod.isLocalVariableDefined( loadFromVarName ) ) {
+						currentMethod.loadFromLocalVar( loadFromVarName, false, 0 );
+					}
+					else if ( currentModule.isFieldDefined( loadFromVarName ) ) {
+						currentMethod.loadFromField( currentModule, loadFromVarName, false, 0 );
+					}
+					else {
+						throw new CompileException("Variable "+loadFromVarName+" used, but not defined.");
+					}
+					currentMethod.loadFromArray(loadFromVarName, Integer.parseInt(arrayIndex)-1 );
+				}
+				else {
+					if ( currentConstructor.isLocalVariableDefined( loadFromVarName ) ) {
+						currentConstructor.loadFromLocalVar(loadFromVarName, false, 0 );
+					}
+					else if ( currentModule.isFieldDefined(loadFromVarName) ) {
+						currentConstructor.loadFromField( currentModule, loadFromVarName, false, 0 );
+					}
+					else {
+						throw new CompileException("Variable "+loadFromVarName+" used, but not defined.");
+					}
+					currentMethod.loadFromArray(loadFromVarName, Integer.parseInt(arrayIndex)-1 );
+				}				
+				
+			}
+			
 			String varName = convertVariableName ( ctx.leftHandSide().getText() );
 			if ( currentMethod != null ) {
 				if ( currentMethod.isLocalVariableDefined( varName ) ) {
@@ -591,6 +628,9 @@ public class JMessageBuilderVisitorImpl extends JMessageBuilderBaseVisitor<Void>
 				else {
 					try {
 						LocalVariable lv = currentMethod.getVariable(lc.variableIdentifier().getText().substring(1).toLowerCase());
+						if ( lc.arrs() != null ) {
+							lv.setArrayAccess( Integer.valueOf(lc.arrs().arr().get(0).literal().getText()) );
+						}
 						lst.add( lv );
 					} catch (CompileException e) {
 						e.printStackTrace();

@@ -19,6 +19,7 @@ import org.objectweb.asm.commons.AdviceAdapter;
 import org.objectweb.asm.commons.Method;
 
 import com.axway.jmb.builtin.Builtin;
+import com.axway.jmb.support.JMBCSupport;
 
 /**
  * Visitor for java method's build.
@@ -233,6 +234,12 @@ public class MethodBuilder extends AdviceAdapter {
 		debug("## put field " + field.getName());
 	}
 	
+	public void loadFromArray(String loadFromVarName, int parseInt) {
+		push(parseInt);
+		LocalVariable lv = localVars.get( loadFromVarName );
+		arrayLoad( lv.getType().getJvmType() );
+	}
+	
 	public void printStatement ( List<Object> objs ) {
 		StringBuffer sb = new StringBuffer();
 		Integer tempLocalVar = null;
@@ -265,13 +272,15 @@ public class MethodBuilder extends AdviceAdapter {
 						invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf(char[])"));
 					}
 					if ( lv.getType() == JMBVariableType.DATE) {
-						invokeVirtual(Type.getType(Date.class), Method.getMethod("String toString()"));
+						invokeStatic(Type.getType(JMBCSupport.class), Method.getMethod("String formatDateDefault(java.util.Date)"));
 					}					
 				}
 				else {
 					loadLocal(lv.getArrayPosition(), lv.getType().getArrayJvmType( lv.getArrayDimension() ));
-//					visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;");
-					invokeStatic(Type.getType(Arrays.class), Method.getMethod("String toString(Object[])"));
+					push(lv.getArrayAccess()-1 );
+					arrayLoad( lv.getType().getJvmType() );
+//					visitTypeInsn(CHECKCAST, "java/lang/String");
+//					invokeStatic(Type.getType(Arrays.class), Method.getMethod("String toString(Object[])"));
 				}
 				invokeVirtual(Type.getType(String.class),
 				         Method.getMethod("String concat(String)"));				
@@ -334,5 +343,7 @@ public class MethodBuilder extends AdviceAdapter {
 	private void debug( String str ) {
 		System.out.println( str );
 	}
+
+
 
 }

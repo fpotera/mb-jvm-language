@@ -20,6 +20,7 @@ public class ClassField {
 	private Type recordType;
 	private int arrayDimension = 0;
 	private boolean initializationAvailable = false;
+	private int arrayAccess;
 	
 	public String getName() {
 		return name;
@@ -72,6 +73,13 @@ public class ClassField {
 	public void setRecordType(Type recordType) {
 		this.recordType = recordType;
 	}
-	
+
+	public int getArrayAccess() {
+		return arrayAccess;
+	}
+
+	public void setArrayAccess(int arrayAccess) {
+		this.arrayAccess = arrayAccess;
+	}
 	
 }
