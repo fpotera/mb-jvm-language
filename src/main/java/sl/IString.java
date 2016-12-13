@@ -44,7 +44,7 @@ public interface IString {
 	public abstract Object fieldcount(Object... args);
 
 	/**
-	 * Function that returns the number of fields in a string as an integer
+	 * Function that extracts and returns the specified field from a string
 	 * @param args (string, field-number[, separators])
 	 * 				</br>The <code><b><i>string</i></b></code> parameter is the string to extract the field from. It should be of string type.
 	 * 				</br>The <code><b><i>field-number</i></b></code> parameter is the field to extract.</br>&emsp;<code>The first field has number 1.</code>

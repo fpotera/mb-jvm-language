@@ -15,7 +15,7 @@ public class TestStageOfDevelopment {
 //	private static final java.lang.Object[] FUNCTION_ARGUMENTS = { new java.lang.String[] { "field A", "field B", "field C", "field D" }, ":" };
 
 	public static void main(java.lang.String[] args) {
-//		test_SL_STRING_Module();
+		test_SL_STRING_Module();
 //		test_SL_ARGUMENT_Module();
 //		test_SL_CHAR_Module();
 //		test_SL_DATE_Module();
@@ -25,6 +25,7 @@ public class TestStageOfDevelopment {
 //		test_SL_PATH_Module();
 //		test_SL_SEARCH_Module();
 //		test_SL_SORT_Module();
+//		test_SOCKET_Module();
 	}
 	
 	public static void test_SL_STRING_Module() {
